@@ -1,0 +1,13 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+::ng-deep .sidebar-tooltip {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+}

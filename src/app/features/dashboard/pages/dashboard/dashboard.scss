@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+/* Custom styles for MatTable */
+.mat-mdc-table {
+  background-color: transparent !important;
+  width: 100%;
+}
+
+.mat-mdc-header-cell {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.mat-mdc-cell {
+  border-bottom: 1px solid #f8fafc !important;
+}
+
+/* Icon backgrounds and text colors for KPIs */
+.icon-bg-primary {
+  background-color: #eef2ff;
+  color: #4338ca; /* Indigo-700 */
+}
+.icon-bg-warn {
+  background-color: #fef2f2;
+  color: #be123c; /* Rose-700 */
+}
+.icon-bg-accent {
+  background-color: #fffbeb;
+  color: #b45309; /* Amber-700 */
+}
+.icon-bg-blue {
+  background-color: #eff6ff;
+  color: #1d4ed8; /* Blue-700 */
+}
+.icon-bg-orange {
+  background-color: #fff7ed;
+  color: #c2410c; /* Orange-700 */
+}
+.icon-bg-green {
+  background-color: #ecfdf5;
+  color: #047857; /* Emerald-700 */
+}

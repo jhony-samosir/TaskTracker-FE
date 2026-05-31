@@ -1,0 +1,50 @@
+<section
+  class="relative h-full overflow-hidden bg-white rounded-2xl border border-slate-200 transition-all duration-200 hover:border-slate-300 hover:shadow-sm"
+  [attr.aria-label]="title() + ' statistic'"
+>
+  <div class="p-5 flex flex-col h-full">
+    <div class="flex items-start justify-between">
+      <div class="flex flex-col">
+        <span class="text-xs font-medium text-slate-500 mb-1">
+          {{ title() }}
+        </span>
+        <span class="text-3xl font-bold tracking-tight text-slate-900 leading-none">
+          {{ value() }}
+        </span>
+      </div>
+      <div
+        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+        [class]="'icon-bg-' + color()"
+      >
+        <mat-icon class="material-icons-round text-[20px] leading-none w-5 h-5">{{
+          icon()
+        }}</mat-icon>
+      </div>
+    </div>
+
+    <span class="flex-1"></span>
+
+    @if (trend()) {
+      <div class="mt-4 flex items-center text-xs font-medium">
+        @if (trendDirection() === 'up') {
+          <mat-icon class="text-emerald-500 text-sm h-4 w-4 mr-1 leading-none"
+            >trending_up</mat-icon
+          >
+        } @else if (trendDirection() === 'down') {
+          <mat-icon class="text-rose-500 text-sm h-4 w-4 mr-1 leading-none">trending_down</mat-icon>
+        } @else {
+          <mat-icon class="text-slate-400 text-sm h-4 w-4 mr-1 leading-none"
+            >trending_flat</mat-icon
+          >
+        }
+        <span
+          [class.text-emerald-600]="trendDirection() === 'up'"
+          [class.text-rose-600]="trendDirection() === 'down'"
+          [class.text-slate-500]="trendDirection() === 'neutral'"
+        >
+          {{ trend() }}
+        </span>
+      </div>
+    }
+  </div>
+</section>

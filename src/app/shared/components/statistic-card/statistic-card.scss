@@ -1,0 +1,49 @@
+:host {
+  display: block;
+}
+
+/* Accent borders */
+.border-primary {
+  border-left-color: var(--mat-sys-primary, #3f51b5);
+}
+.border-warn {
+  border-left-color: var(--mat-sys-error, #f44336);
+}
+.border-accent {
+  border-left-color: var(--mat-sys-secondary, #ff4081);
+}
+.border-blue {
+  border-left-color: #1d4ed8;
+}
+.border-orange {
+  border-left-color: #c2410c;
+}
+.border-green {
+  border-left-color: #15803d;
+}
+
+/* Icon backgrounds and text colors */
+.icon-bg-primary {
+  background-color: #eef2ff;
+  color: #4338ca !important;
+}
+.icon-bg-warn {
+  background-color: #fef2f2;
+  color: #b91c1c !important;
+}
+.icon-bg-accent {
+  background-color: #fdf2f8;
+  color: #be185d !important;
+}
+.icon-bg-blue {
+  background-color: #eff6ff;
+  color: #1e3a8a !important;
+}
+.icon-bg-orange {
+  background-color: #fff7ed;
+  color: #9a3412 !important;
+}
+.icon-bg-green {
+  background-color: #f0fdf4;
+  color: #14532d !important;
+}
