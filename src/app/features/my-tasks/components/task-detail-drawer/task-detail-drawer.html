@@ -1,0 +1,197 @@
+<div class="flex h-full flex-col bg-white">
+  <!-- Header -->
+  <div class="flex items-start justify-between border-b border-slate-100 p-6 pb-5">
+    <div class="min-w-0 pr-4">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="text-xs font-semibold text-slate-400">#{{ data.task.id }}</span>
+        @if (data.task.priority) {
+          <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+            {{ data.task.priority }}
+          </span>
+        }
+        <span
+          class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide"
+          [class]="getStatusClass(data.task.status)"
+        >
+          {{ formatStatus(data.task.status) }}
+        </span>
+      </div>
+      <h2 class="text-xl font-bold leading-tight text-slate-900 break-words">
+        {{ data.task.title }}
+      </h2>
+    </div>
+    <button mat-icon-button (click)="close()" class="-mr-2 -mt-2 !text-slate-400 hover:!text-slate-600">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content Tabs -->
+  <mat-tab-group class="flex-1 custom-tab-group" mat-stretch-tabs="false">
+    <!-- Tab 1: Details -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="mr-2 !text-[18px]">info</mat-icon> Details
+      </ng-template>
+      
+      <div class="p-6 overflow-y-auto custom-scrollbar max-h-[calc(100vh-250px)]">
+        <!-- People & Dates Grid -->
+        <div class="grid grid-cols-2 gap-6 mb-8 rounded-xl bg-slate-50 p-5 border border-slate-100">
+          <div class="space-y-1">
+            <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Assignee</span>
+            <div class="flex items-center gap-2 mt-1.5">
+              <div class="flex h-7 w-7 items-center justify-center rounded bg-indigo-100 text-xs font-bold text-indigo-700">
+                {{ (data.task.assigneeName || 'U').charAt(0) }}
+              </div>
+              <span class="text-sm font-semibold text-slate-800">{{ data.task.assigneeName || 'Unassigned' }}</span>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Reviewer</span>
+            <div class="flex items-center gap-2 mt-1.5">
+              <div class="flex h-7 w-7 items-center justify-center rounded bg-amber-100 text-xs font-bold text-amber-700">
+                {{ (data.task.reviewerName || 'N').charAt(0) }}
+              </div>
+              <span class="text-sm font-semibold text-slate-800">{{ data.task.reviewerName || 'No Reviewer' }}</span>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Due Date</span>
+            <div class="flex items-center gap-2 mt-1.5 text-sm font-semibold text-slate-800">
+              <mat-icon class="text-slate-400 !text-lg !h-5 !w-5">event</mat-icon>
+              {{ data.task.deadline | date: 'mediumDate' }}
+            </div>
+          </div>
+          <div class="space-y-1">
+            <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Created</span>
+            <div class="flex items-center gap-2 mt-1.5 text-sm font-semibold text-slate-800">
+              <mat-icon class="text-slate-400 !text-lg !h-5 !w-5">schedule</mat-icon>
+              {{ data.task.createdAt ? (data.task.createdAt | date: 'mediumDate') : 'Unknown' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-8">
+          <h3 class="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+            <mat-icon class="text-slate-400 !text-[18px] !h-[18px] !w-[18px]">description</mat-icon>
+            Description
+          </h3>
+          <div class="prose prose-sm prose-slate max-w-none text-slate-600 bg-white border border-slate-200 rounded-xl p-4">
+            @if (data.task.description) {
+              <p>{{ data.task.description }}</p>
+            } @else {
+              <p class="text-slate-400 italic">No description provided for this task.</p>
+            }
+          </div>
+        </div>
+
+        <!-- Latest Comment -->
+        <div class="mb-6">
+          <h3 class="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+            <mat-icon class="text-slate-400 !text-[18px] !h-[18px] !w-[18px]">chat_bubble_outline</mat-icon>
+            Latest Note/Comment
+          </h3>
+          <div class="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100/50">
+            @if (data.task.comment) {
+              <p class="text-sm text-slate-700 italic">"{{ data.task.comment }}"</p>
+            } @else {
+              <p class="text-sm text-slate-400">No notes available.</p>
+            }
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Tab 2: Activity & Attachments -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="mr-2 !text-[18px]">history</mat-icon> History & Files
+      </ng-template>
+      
+      <div class="p-6 overflow-y-auto custom-scrollbar max-h-[calc(100vh-250px)]">
+        <!-- Attachments -->
+        <div class="mb-8">
+          <h3 class="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+            <mat-icon class="text-slate-400 !text-[18px] !h-[18px] !w-[18px]">attach_file</mat-icon>
+            Attachments
+          </h3>
+          @if (data.task.attachments && data.task.attachments.length > 0) {
+            <div class="space-y-2">
+              @for (file of data.task.attachments; track file) {
+                <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer">
+                  <div class="bg-indigo-100 p-2 rounded text-indigo-700">
+                    <mat-icon class="!text-[18px] !h-[18px] !w-[18px] leading-none">insert_drive_file</mat-icon>
+                  </div>
+                  <span class="text-sm font-medium text-slate-700 flex-1 truncate">{{ file }}</span>
+                  <button mat-icon-button class="!h-8 !w-8 !text-slate-400 hover:!text-indigo-600">
+                    <mat-icon class="!text-[18px]">download</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          } @else if (data.task.document) {
+             <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer">
+                <div class="bg-indigo-100 p-2 rounded text-indigo-700">
+                  <mat-icon class="!text-[18px] !h-[18px] !w-[18px] leading-none">insert_drive_file</mat-icon>
+                </div>
+                <span class="text-sm font-medium text-slate-700 flex-1 truncate">{{ data.task.document }}</span>
+                <button mat-icon-button class="!h-8 !w-8 !text-slate-400 hover:!text-indigo-600">
+                  <mat-icon class="!text-[18px]">download</mat-icon>
+                </button>
+              </div>
+          } @else {
+            <p class="text-sm text-slate-400 p-4 border border-dashed border-slate-200 rounded-lg text-center">
+              No files attached.
+            </p>
+          }
+        </div>
+
+        <mat-divider class="!my-6"></mat-divider>
+
+        <!-- History timeline -->
+        <div>
+          <h3 class="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <mat-icon class="text-slate-400 !text-[18px] !h-[18px] !w-[18px]">timeline</mat-icon>
+            Activity Timeline
+          </h3>
+          
+          <div class="relative border-l-2 border-slate-100 ml-3 pl-5 space-y-6">
+            @for (activity of data.task.history; track activity.id) {
+              <div class="relative">
+                <div class="absolute -left-[27px] top-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-indigo-500"></div>
+                <div class="flex items-baseline gap-2 mb-1">
+                  <span class="text-sm font-bold text-slate-800">{{ activity.authorName }}</span>
+                  <span class="text-xs text-slate-400">{{ activity.createdAt | date: 'mediumDate' }}</span>
+                </div>
+                <div class="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 inline-block mt-1">
+                  {{ activity.message }}
+                </div>
+              </div>
+            } @empty {
+              <div class="text-sm text-slate-400 italic">No recorded activity.</div>
+            }
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <!-- Footer Actions -->
+  <div class="border-t border-slate-100 bg-slate-50 p-4 px-6 flex items-center gap-3 justify-end">
+    <button mat-button (click)="close()">Close</button>
+    
+    @if (data.task.status === 'ASSIGNED') {
+      <button mat-flat-button class="!bg-indigo-600 !text-white" (click)="updateStatus('ON_PROGRESS')">
+        Start Work
+      </button>
+    } @else if (data.task.status === 'ON_PROGRESS' || data.task.status === 'NEED_REVISION') {
+      <button mat-flat-button class="!bg-amber-600 !text-white" (click)="updateStatus('NEED_REVIEW')">
+        Submit for Review
+      </button>
+    } @else if (data.task.status === 'NEED_REVIEW') {
+      <button mat-flat-button class="!bg-emerald-600 !text-white" (click)="updateStatus('CLEARED')">
+        Mark Cleared
+      </button>
+    }
+  </div>
+</div>

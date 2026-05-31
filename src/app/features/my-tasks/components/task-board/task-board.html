@@ -1,0 +1,90 @@
+<!-- Desktop view (Kanban Board) -->
+<div class="hidden md:grid grid-cols-4 gap-6 h-full min-h-[600px]" cdkDropListGroup>
+  @for (col of columns; track col.id) {
+    <div
+      class="flex flex-col rounded-2xl border p-4 transition-all duration-200"
+      [class]="col.colorClass"
+    >
+      <!-- Column Header -->
+      <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <span
+            class="inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-bold"
+            [class]="col.headerColorClass"
+          >
+            {{ col.title }}
+          </span>
+          <span class="text-xs font-semibold text-slate-400">
+            {{ boardState()[col.id].length }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Column Card Container -->
+      <div
+        [id]="col.id"
+        cdkDropList
+        [cdkDropListData]="boardState()[col.id]"
+        [cdkDropListConnectedTo]="getConnectedList()"
+        (cdkDropListDropped)="onDrop($event)"
+        class="flex-1 space-y-3 min-h-[450px]"
+      >
+        @for (task of boardState()[col.id]; track task.id) {
+          <div cdkDrag class="cursor-grab active:cursor-grabbing">
+            <app-task-card
+              [task]="task"
+              (selected)="onCardSelect($event)"
+              (statusChange)="onCardStatusChange($event)"
+            ></app-task-card>
+
+            <!-- Custom Drag Placeholder -->
+            <div *cdkDragPlaceholder class="border-2 border-dashed border-indigo-200 bg-indigo-50/50 rounded-2xl h-36"></div>
+          </div>
+        } @empty {
+          <div class="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white/40">
+            <mat-icon class="text-slate-300 !text-3xl !h-8 !w-8">inbox</mat-icon>
+            <span class="text-xs text-slate-400 mt-2">No tasks</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Mobile view (Swipeable Tabs) -->
+<div class="md:hidden">
+  <mat-tab-group
+    [selectedIndex]="activeMobileTab()"
+    (selectedIndexChange)="activeMobileTab.set($event)"
+    mat-stretch-tabs="false"
+    class="mobile-tab-group"
+  >
+    @for (col of columns; track col.id) {
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <div class="flex items-center gap-1.5 py-1">
+            <span class="text-sm font-semibold">{{ col.title }}</span>
+            <span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+              {{ boardState()[col.id].length }}
+            </span>
+          </div>
+        </ng-template>
+
+        <div class="py-4 space-y-4 min-h-[300px]">
+          @for (task of boardState()[col.id]; track task.id) {
+            <app-task-card
+              [task]="task"
+              (selected)="onCardSelect($event)"
+              (statusChange)="onCardStatusChange($event)"
+            ></app-task-card>
+          } @empty {
+            <div class="flex flex-col items-center justify-center py-16 border border-dashed border-slate-200 rounded-2xl bg-white">
+              <mat-icon class="text-slate-300 !text-4xl !h-10 !w-10">inbox</mat-icon>
+              <span class="text-sm text-slate-400 mt-2">No tasks in this stage</span>
+            </div>
+          }
+        </div>
+      </mat-tab>
+    }
+  </mat-tab-group>
+</div>

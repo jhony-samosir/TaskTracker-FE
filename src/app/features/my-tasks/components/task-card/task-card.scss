@@ -1,0 +1,41 @@
+:host {
+  display: block;
+}
+
+/* Priority Indicators */
+.priority-indicator-urgent {
+  background: linear-gradient(to right, #ef4444, #f97316);
+}
+.priority-indicator-high {
+  background: linear-gradient(to right, #f97316, #fbbf24);
+}
+.priority-indicator-medium {
+  background: linear-gradient(to right, #fbbf24, #84cc16);
+}
+.priority-indicator-low {
+  background: linear-gradient(to right, #84cc16, #22c55e);
+}
+
+/* Ensure clickable area is obvious */
+button[mat-button] {
+  transition: all 0.15s ease-in-out;
+}
+
+button[mat-button]:hover {
+  transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .task-card-content {
+    padding: 3px;
+  }
+  
+  h3 {
+    font-size: 0.9rem;
+  }
+  
+  .task-meta {
+    font-size: 0.75rem;
+  }
+}

@@ -1,0 +1,101 @@
+<button
+  type="button"
+  class="group relative w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+  (click)="selectTask()"
+>
+  @if (task().priority) {
+    <div
+      class="absolute inset-x-0 top-0 h-1 rounded-t-2xl"
+      [class]="'priority-indicator-' + task().priority!.toLowerCase()"
+    ></div>
+  }
+
+  <div class="flex items-start justify-between gap-3">
+    <div class="min-w-0 flex-1">
+      <h3 class="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">
+        {{ task().title }}
+      </h3>
+      <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+        {{ task().description || task().comment || 'No description available.' }}
+      </p>
+    </div>
+    @if (task().priority) {
+      <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+        {{ task().priority }}
+      </span>
+    }
+  </div>
+
+  <div class="mt-4 flex flex-wrap items-center gap-2">
+    <span
+      class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide"
+      [class]="getStatusClass(task().status)"
+    >
+      {{ formatStatus(task().status) }}
+    </span>
+    <span
+      class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+      [class.bg-rose-50]="isOverdue(task().deadline) && task().status !== 'CLEARED'"
+      [class.text-rose-700]="isOverdue(task().deadline) && task().status !== 'CLEARED'"
+      [class.bg-slate-100]="!isOverdue(task().deadline) || task().status === 'CLEARED'"
+      [class.text-slate-600]="!isOverdue(task().deadline) || task().status === 'CLEARED'"
+    >
+      <mat-icon class="!h-3.5 !w-3.5 !text-sm !leading-none">event</mat-icon>
+      {{ task().deadline | date: 'MMM d' }}
+    </span>
+  </div>
+
+  <div class="mt-4 space-y-2 text-xs text-slate-500">
+    <div class="flex items-center gap-2">
+      <mat-icon class="!h-4 !w-4 !text-base text-slate-400">person</mat-icon>
+      <span class="truncate">{{ task().assigneeName || 'Unassigned' }}</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <mat-icon class="!h-4 !w-4 !text-base text-slate-400">rate_review</mat-icon>
+      <span class="truncate">{{ task().reviewerName || 'No reviewer' }}</span>
+    </div>
+    @if (task().attachments?.length) {
+      <div class="flex items-center gap-2">
+        <mat-icon class="!h-4 !w-4 !text-base text-slate-400">attach_file</mat-icon>
+        <span>{{ task().attachments!.length }} attachment{{ task().attachments!.length > 1 ? 's' : '' }}</span>
+      </div>
+    }
+  </div>
+
+  <div class="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
+    @if (task().status !== 'ON_PROGRESS' && task().status !== 'CLEARED') {
+      <button
+        type="button"
+        mat-icon-button
+        matTooltip="Move to On Progress"
+        class="!h-8 !w-8 !rounded-lg !bg-indigo-50 !text-indigo-600"
+        (click)="updateStatus($event, 'ON_PROGRESS')"
+      >
+        <mat-icon class="!text-base">play_arrow</mat-icon>
+      </button>
+    }
+    @if (task().status !== 'NEED_REVIEW' && task().status !== 'CLEARED') {
+      <button
+        type="button"
+        mat-icon-button
+        matTooltip="Move to Need Review"
+        class="!h-8 !w-8 !rounded-lg !bg-amber-50 !text-amber-600"
+        (click)="updateStatus($event, 'NEED_REVIEW')"
+      >
+        <mat-icon class="!text-base">visibility</mat-icon>
+      </button>
+    }
+    @if (task().status !== 'CLEARED') {
+      <button
+        type="button"
+        mat-icon-button
+        matTooltip="Mark as Cleared"
+        class="!h-8 !w-8 !rounded-lg !bg-emerald-50 !text-emerald-600"
+        (click)="updateStatus($event, 'CLEARED')"
+      >
+        <mat-icon class="!text-base">check</mat-icon>
+      </button>
+    }
+    <span class="ml-auto text-[10px] font-medium text-slate-400">#{{ task().id }}</span>
+  </div>
+</button>

@@ -1,0 +1,46 @@
+:host {
+  display: block;
+}
+
+/* Custom CDK Drag classes styling */
+.cdk-drag-preview {
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+              0 8px 10px 1px rgba(0, 0, 0, 0.14),
+              0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  border-radius: 1rem;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list-dragging .cdk-drag {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+::ng-deep {
+  .mobile-tab-group {
+    .mat-mdc-tab-header {
+      background-color: white;
+      border-radius: 12px;
+      border: 1px solid #f1f5f9;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    
+    .mat-mdc-tab-body-wrapper {
+      padding-top: 4px;
+    }
+    
+    .mat-mdc-tab .mdc-tab-indicator__content--underline {
+      border-color: #4f46e5 !important;
+    }
+    
+    .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
+      color: #4f46e5 !important;
+    }
+  }
+}

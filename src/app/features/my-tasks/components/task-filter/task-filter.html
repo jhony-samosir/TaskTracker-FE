@@ -1,0 +1,72 @@
+<div class="flex flex-wrap items-center gap-3">
+  <!-- Search -->
+  <mat-form-field
+    appearance="outline"
+    class="!mb-0 min-w-[200px] max-w-[320px] flex-1"
+    subscriptSizing="dynamic"
+  >
+    <mat-icon matPrefix class="text-slate-400 text-xl leading-none">search</mat-icon>
+    <input
+      matInput
+      placeholder="Search tasks..."
+      [ngModel]="search()"
+      (ngModelChange)="onSearchChange($event)"
+    />
+    @if (search()) {
+      <button matSuffix mat-icon-button (click)="onSearchChange('')" class="!w-6 !h-6 !leading-none">
+        <mat-icon class="text-slate-400 text-lg">close</mat-icon>
+      </button>
+    }
+  </mat-form-field>
+
+  <!-- Status Filter -->
+  <mat-form-field appearance="outline" class="!mb-0 min-w-[160px]" subscriptSizing="dynamic">
+    <mat-label>Status</mat-label>
+    <mat-select [value]="status()" (selectionChange)="onStatusChange($event)">
+      @for (option of statusOptions; track option.value) {
+        <mat-option [value]="option.value">
+          <div class="flex items-center justify-between gap-2">
+            <span>{{ option.label }}</span>
+            @if (statusCounts()[option.value]) {
+              <span class="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                {{ statusCounts()[option.value] }}
+              </span>
+            }
+          </div>
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <!-- Priority Filter -->
+  <mat-form-field appearance="outline" class="!mb-0 min-w-[150px]" subscriptSizing="dynamic">
+    <mat-label>Priority</mat-label>
+    <mat-select [value]="priority()" (selectionChange)="onPriorityChange($event)">
+      @for (option of priorityOptions; track option.value) {
+        <mat-option [value]="option.value">{{ option.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <!-- Sort -->
+  <mat-form-field appearance="outline" class="!mb-0 min-w-[140px]" subscriptSizing="dynamic">
+    <mat-label>Sort</mat-label>
+    <mat-select [value]="sortBy()" (selectionChange)="onSortChange($event)">
+      @for (option of sortOptions; track option.value) {
+        <mat-option [value]="option.value">{{ option.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <!-- Clear Filters -->
+  @if (hasActiveFilters()) {
+    <button
+      mat-stroked-button
+      (click)="clearFilters()"
+      class="!h-12 !rounded-xl !text-sm !font-medium !border-slate-300"
+    >
+      <mat-icon class="text-lg">filter_alt_off</mat-icon>
+      Clear
+    </button>
+  }
+</div>
