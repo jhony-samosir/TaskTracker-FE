@@ -1,0 +1,90 @@
+<div class="flex flex-col gap-4">
+  <!-- Search Row -->
+  <div class="flex flex-wrap items-center gap-3">
+    <mat-form-field appearance="outline" class="!flex-1 !min-w-52">
+      <mat-label>Search tasks</mat-label>
+      <mat-icon matPrefix class="!text-slate-400">search</mat-icon>
+      <input
+        matInput
+        type="text"
+        [value]="filters().search"
+        (input)="emitPatch({ search: $any($event.target).value })"
+        placeholder="Search by title, assignee, reviewer..."
+        aria-label="Search tasks"
+      />
+    </mat-form-field>
+
+    <!-- Status Filter -->
+    <mat-form-field appearance="outline" class="!w-44">
+      <mat-label>Status</mat-label>
+      <mat-select
+        [value]="filters().status"
+        (selectionChange)="emitPatch({ status: $event.value })"
+        aria-label="Filter by status"
+      >
+        <mat-option value="">All Statuses</mat-option>
+        @for (s of statuses; track s.value) {
+          <mat-option [value]="s.value">{{ s.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Priority Filter -->
+    <mat-form-field appearance="outline" class="!w-40">
+      <mat-label>Priority</mat-label>
+      <mat-select
+        [value]="filters().priority"
+        (selectionChange)="emitPatch({ priority: $event.value })"
+        aria-label="Filter by priority"
+      >
+        <mat-option value="">All Priorities</mat-option>
+        @for (p of priorities; track p.value) {
+          <mat-option [value]="p.value">{{ p.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Assignee Filter -->
+    <mat-form-field appearance="outline" class="!w-44">
+      <mat-label>Assignee</mat-label>
+      <mat-select
+        [value]="filters().assigneeId"
+        (selectionChange)="emitPatch({ assigneeId: $event.value })"
+        aria-label="Filter by assignee"
+      >
+        <mat-option value="">All Assignees</mat-option>
+        @for (u of users(); track u.id) {
+          <mat-option [value]="u.id">{{ u.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Sort By -->
+    <mat-form-field appearance="outline" class="!w-40">
+      <mat-label>Sort by</mat-label>
+      <mat-select
+        [value]="filters().sortBy"
+        (selectionChange)="emitPatch({ sortBy: $event.value })"
+        aria-label="Sort tasks by"
+      >
+        <mat-option value="deadline">Deadline</mat-option>
+        <mat-option value="newest">Newest</mat-option>
+        <mat-option value="priority">Priority</mat-option>
+        <mat-option value="status">Status</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Clear Filters -->
+    @if (filters().search || filters().status || filters().priority || filters().assigneeId) {
+      <button
+        mat-stroked-button
+        (click)="clearFilters.emit()"
+        class="!rounded-xl !border-slate-200 !text-slate-600 !h-10"
+        aria-label="Clear all filters"
+      >
+        <mat-icon class="!text-base">close</mat-icon>
+        Clear Filters
+      </button>
+    }
+  </div>
+</div>

@@ -61,11 +61,12 @@ export class MyTasks implements OnInit {
 
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {
+      const sortBy = params.get('sortBy');
       const filters: TaskFilterValues = {
         search: params.get('search') ?? '',
         status: (params.get('status') as TaskStatus | null) ?? '',
         priority: (params.get('priority') as TaskPriority | null) ?? '',
-        sortBy: (params.get('sortBy') as TaskFilters['sortBy']) ?? 'deadline',
+        sortBy: sortBy === 'newest' || sortBy === 'priority' ? sortBy : 'deadline',
       };
 
       this.filterValuesSignal.set(filters);

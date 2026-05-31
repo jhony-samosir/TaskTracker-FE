@@ -1,0 +1,120 @@
+<h2 mat-dialog-title class="!text-xl !font-bold !text-slate-900 border-b border-slate-100 !pb-4">
+  {{ formTitle }}
+</h2>
+
+<mat-dialog-content class="!py-6 custom-scrollbar">
+  <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-5">
+    
+    <!-- Title -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Task Title</mat-label>
+      <input matInput formControlName="title" placeholder="Enter task title" cdkFocusInitial />
+      @if (form.get('title')?.hasError('required')) {
+        <mat-error>Title is required</mat-error>
+      }
+      @if (form.get('title')?.hasError('maxlength')) {
+        <mat-error>Title cannot exceed 200 characters</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Description -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Description (Optional)</mat-label>
+      <textarea matInput formControlName="description" rows="3" placeholder="Add detailed context..."></textarea>
+      @if (form.get('description')?.hasError('maxlength')) {
+        <mat-error>Description cannot exceed 1000 characters</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Assignee -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Assignee</mat-label>
+        <mat-select formControlName="assigneeId">
+          <mat-option>-- None --</mat-option>
+          @for (user of data.users; track user.id) {
+            <mat-option [value]="user.id">{{ user.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.get('assigneeId')?.hasError('required')) {
+          <mat-error>Assignee is required</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Reviewer -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Reviewer</mat-label>
+        <mat-select formControlName="reviewerId">
+          <mat-option>-- None --</mat-option>
+          @for (user of data.users; track user.id) {
+            <mat-option [value]="user.id">{{ user.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.get('reviewerId')?.hasError('required')) {
+          <mat-error>Reviewer is required</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    @if (form.hasError('sameUser') && form.get('assigneeId')?.touched && form.get('reviewerId')?.touched) {
+      <div class="text-xs text-rose-600 bg-rose-50 p-2 rounded-md font-medium">
+        Assignee and Reviewer cannot be the same user.
+      </div>
+    }
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Deadline -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Deadline</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="deadline" [min]="minDeadline" />
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+        @if (form.get('deadline')?.hasError('required')) {
+          <mat-error>Deadline is required</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Priority -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Priority</mat-label>
+        <mat-select formControlName="priority">
+          @for (p of priorities; track p.value) {
+            <mat-option [value]="p.value">{{ p.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Comment -->
+    @if (isEdit) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Update Comment (Optional)</mat-label>
+        <input matInput formControlName="comment" placeholder="Add a note about this update" />
+      </mat-form-field>
+    }
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions class="!p-4 border-t border-slate-100 flex gap-3 justify-end bg-slate-50/50">
+  <button
+    mat-button
+    type="button"
+    (click)="cancel()"
+    [disabled]="saving()"
+    class="!rounded-xl"
+  >
+    Cancel
+  </button>
+  <button
+    mat-flat-button
+    class="!bg-indigo-600 !text-white !rounded-xl !min-w-[100px]"
+    (click)="submit()"
+    [disabled]="saving()"
+  >
+    @if (saving()) {
+      <mat-progress-spinner mode="indeterminate" diameter="20" class="mr-2"></mat-progress-spinner>
+    }
+    {{ isEdit ? 'Save Changes' : 'Create Task' }}
+  </button>
+</mat-dialog-actions>

@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
-import { catchError, delay, finalize, Observable, of, tap, throwError } from 'rxjs';
+import { catchError, delay, finalize, map, Observable, of, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Task, TaskPriority, TaskStatus } from '../models/task.model';
 import { ApiResponse } from './auth.service';
@@ -9,8 +9,23 @@ export interface TaskFilters {
   search?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
-  sortBy?: 'deadline' | 'newest' | 'priority';
+  assigneeId?: number;
+  reviewerId?: number;
+  sortBy?: 'deadline' | 'newest' | 'priority' | 'status';
 }
+
+export interface CreateTaskRequest {
+  title: string;
+  description?: string;
+  assigneeId: number;
+  reviewerId: number;
+  deadline: string;
+  priority: TaskPriority;
+  comment?: string;
+  document?: string;
+}
+
+export interface UpdateTaskRequest extends CreateTaskRequest {}
 
 export interface UpdateTaskStatusRequest {
   status: TaskStatus;
@@ -34,15 +49,11 @@ export class TaskService {
   constructor(private readonly http: HttpClient) {}
 
   loadMyTasks(filters: TaskFilters = {}): void {
-    this.loadingSignal.set(true);
-    this.errorSignal.set(null);
+    this.loadTasks(() => this.getMyTasks(filters));
+  }
 
-    this.getMyTasks(filters)
-      .pipe(finalize(() => this.loadingSignal.set(false)))
-      .subscribe({
-        next: (tasks) => this.tasksSignal.set(tasks),
-        error: (error: unknown) => this.errorSignal.set(this.getErrorMessage(error)),
-      });
+  loadManagedTasks(filters: TaskFilters = {}): void {
+    this.loadTasks(() => this.getManagedTasks(filters));
   }
 
   getMyTasks(filters: TaskFilters = {}): Observable<Task[]> {
@@ -78,6 +89,147 @@ export class TaskService {
           }),
         ),
     );
+  }
+
+  getManagedTasks(filters: TaskFilters = {}): Observable<Task[]> {
+    const params = this.buildParams(filters);
+    return this.http.get<ApiResponse<Task[]>>(`${this.apiUrl}`, { params }).pipe(
+      tap((response) => {
+        if (!response.succeeded) {
+          throw new Error(response.message || 'Failed to load managed tasks.');
+        }
+      }),
+      catchError(() => of(this.getMockTasks()).pipe(delay(350))),
+      (source: Observable<ApiResponse<Task[]> | Task[]>) =>
+        new Observable<Task[]>((observer) =>
+          source.subscribe({
+            next: (response) => {
+              const tasks = Array.isArray(response) ? response : response.data;
+              observer.next(this.applyLocalFilters(tasks, filters));
+            },
+            error: (error) => observer.error(error),
+            complete: () => observer.complete(),
+          }),
+        ),
+    );
+  }
+
+  createTask(request: CreateTaskRequest): Observable<Task> {
+    this.savingSignal.set(true);
+    this.errorSignal.set(null);
+    return this.http.post<ApiResponse<Task>>(`${this.apiUrl}`, request).pipe(
+      catchError(() => {
+        const mockTask: Task = {
+          id: Math.floor(Math.random() * 1000) + 10,
+          title: request.title,
+          description: request.description,
+          assigneeId: request.assigneeId,
+          assigneeName: this.getMockUsers().find(u => u.id === request.assigneeId)?.name || `User ${request.assigneeId}`,
+          reviewerId: request.reviewerId,
+          reviewerName: this.getMockUsers().find(u => u.id === request.reviewerId)?.name || `User ${request.reviewerId}`,
+          deadline: request.deadline,
+          priority: request.priority,
+          document: request.document,
+          comment: request.comment,
+          status: 'ASSIGNED',
+          createdAt: new Date().toISOString(),
+          history: [
+            {
+              id: 1,
+              type: 'STATUS_CHANGE',
+              message: 'Task created and assigned.',
+              authorName: 'Admin User',
+              createdAt: new Date().toISOString()
+            }
+          ]
+        };
+        return of({ succeeded: true, message: 'Mock task created', data: mockTask }).pipe(delay(350));
+      }),
+      tap((response) => {
+        if (!response.succeeded) {
+          throw new Error(response.message || 'Failed to create task.');
+        }
+        this.tasksSignal.update((tasks) => [response.data, ...tasks]);
+      }),
+      map((response) => response.data),
+      catchError((error: unknown) => {
+        this.errorSignal.set(this.getErrorMessage(error));
+        return throwError(() => error);
+      }),
+      finalize(() => this.savingSignal.set(false))
+    );
+  }
+
+  updateTask(taskId: number, request: UpdateTaskRequest): Observable<Task> {
+    this.savingSignal.set(true);
+    this.errorSignal.set(null);
+    return this.http.put<ApiResponse<Task>>(`${this.apiUrl}/${taskId}`, request).pipe(
+      catchError(() => {
+        const existingTask = this.tasksSignal().find(t => t.id === taskId);
+        const updatedTask: Task = {
+          ...existingTask,
+          id: taskId,
+          title: request.title,
+          description: request.description,
+          assigneeId: request.assigneeId,
+          assigneeName: this.getMockUsers().find(u => u.id === request.assigneeId)?.name || `User ${request.assigneeId}`,
+          reviewerId: request.reviewerId,
+          reviewerName: this.getMockUsers().find(u => u.id === request.reviewerId)?.name || `User ${request.reviewerId}`,
+          deadline: request.deadline,
+          priority: request.priority,
+          document: request.document,
+          comment: request.comment,
+          status: existingTask?.status || 'ASSIGNED',
+          history: [
+            ...(existingTask?.history || []),
+            {
+              id: (existingTask?.history?.length || 0) + 1,
+              type: 'COMMENT',
+              message: 'Task metadata updated by Administrator.',
+              authorName: 'Admin User',
+              createdAt: new Date().toISOString()
+            }
+          ]
+        };
+        return of({ succeeded: true, message: 'Mock task updated', data: updatedTask }).pipe(delay(350));
+      }),
+      tap((response) => {
+        if (!response.succeeded) {
+          throw new Error(response.message || 'Failed to update task.');
+        }
+        this.tasksSignal.update((tasks) =>
+          tasks.map((task) => (task.id === taskId ? response.data : task))
+        );
+      }),
+      map((response) => response.data),
+      catchError((error: unknown) => {
+        this.errorSignal.set(this.getErrorMessage(error));
+        return throwError(() => error);
+      }),
+      finalize(() => this.savingSignal.set(false))
+    );
+  }
+
+  getMockUsers(): { id: number; name: string; role: 'ADMIN' | 'EMPLOYEE' }[] {
+    return [
+      { id: 2, name: 'Admin User', role: 'ADMIN' },
+      { id: 10, name: 'Alex Mercer', role: 'EMPLOYEE' },
+      { id: 11, name: 'Sarah Connor', role: 'EMPLOYEE' },
+      { id: 12, name: 'John Doe', role: 'EMPLOYEE' },
+      { id: 13, name: 'Emily Watson', role: 'EMPLOYEE' },
+    ];
+  }
+
+  private loadTasks(loadFn: () => Observable<Task[]>): void {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    loadFn()
+      .pipe(finalize(() => this.loadingSignal.set(false)))
+      .subscribe({
+        next: (tasks) => this.tasksSignal.set(tasks),
+        error: (error: unknown) => this.errorSignal.set(this.getErrorMessage(error)),
+      });
   }
 
   updateTaskStatus(taskId: number, status: TaskStatus): Observable<Task> {
@@ -132,6 +284,8 @@ export class TaskService {
     if (filters.search) params = params.set('search', filters.search);
     if (filters.status) params = params.set('status', filters.status);
     if (filters.priority) params = params.set('priority', filters.priority);
+    if (filters.assigneeId) params = params.set('assigneeId', String(filters.assigneeId));
+    if (filters.reviewerId) params = params.set('reviewerId', String(filters.reviewerId));
     if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
 
     return params;
@@ -175,12 +329,22 @@ export class TaskService {
       filteredTasks = filteredTasks.filter((task) => task.priority === filters.priority);
     }
 
+    if (filters.assigneeId) {
+      filteredTasks = filteredTasks.filter((task) => task.assigneeId === filters.assigneeId);
+    }
+
+    if (filters.reviewerId) {
+      filteredTasks = filteredTasks.filter((task) => task.reviewerId === filters.reviewerId);
+    }
+
     return filteredTasks.sort((a, b) => {
       switch (filters.sortBy) {
         case 'newest':
           return new Date(b.createdAt ?? '').getTime() - new Date(a.createdAt ?? '').getTime();
         case 'priority':
           return this.priorityRank(b.priority) - this.priorityRank(a.priority);
+        case 'status':
+          return this.statusRank(a.status) - this.statusRank(b.status);
         case 'deadline':
         default:
           return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
@@ -197,6 +361,18 @@ export class TaskService {
     };
 
     return rank[priority];
+  }
+
+  private statusRank(status: TaskStatus): number {
+    const rank: Record<TaskStatus, number> = {
+      ASSIGNED: 1,
+      ON_PROGRESS: 2,
+      NEED_REVIEW: 3,
+      NEED_REVISION: 4,
+      CLEARED: 5,
+    };
+
+    return rank[status];
   }
 
   private getMockTasks(): Task[] {

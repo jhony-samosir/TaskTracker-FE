@@ -1,0 +1,177 @@
+<header class="!flex-0 flex justify-between items-center border-b border-slate-100 bg-white p-4">
+  <div class="flex-1 text-left">
+    <h2 mat-dialog-title class="!text-2xl !font-bold !text-slate-900">{{ task.title }}</h2>
+    <p class="text-sm text-slate-500">
+      {{ getStatusLabel(task.status) }} • {{ getPriorityClasses(task.priority || '') }}
+    </p>
+  </div>
+  <button mat-icon-button (click)="closeDrawer()" aria-label="Close drawer">
+    <mat-icon class="!text-slate-500 hover:!text-slate-700 transition-colors">close</mat-icon>
+  </button>
+</header>
+
+<mat-dialog-content class="!p-4 h-full overflow-y-auto custom-scrollbar">
+  <section class="mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Task Info -->
+      <div class="space-y-4">
+        <div class="text-sm font-medium text-slate-600">Assignment</div>
+        <p class="font-semibold text-slate-900">{{ task.assigneeName || 'Unassigned' }}</p>
+        <div class="text-xs text-slate-500 mt-1">Reviewer: {{ task.reviewerName || '-' }}</div>
+      </div>
+
+      <!-- Dates -->
+      <div class="space-y-4">
+        <div class="text-sm font-medium text-slate-600">Dates</div>
+        <dl class="grid grid-cols-2 gap-4 mt-2">
+          <div>
+            <dt class="text-xs text-slate-500">Created</dt>
+            <dd class="font-semibold text-slate-800">{{ task.createdAt | date:'mediumDate' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-slate-500">Deadline</dt>
+            <dd class="font-semibold" [class.text-rose-600]="isOverdue">
+              {{ task.deadline | date:'mediumDate' }}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Description -->
+    @if (task.description) {
+      <div class="border-t pt-4 mt-6">
+        <div class="text-sm font-medium text-slate-600 mb-2">Description</div>
+        <p class="text-slate-800 whitespace-pre-wrap line-clamp-4 max-h-[6rem] overflow-hidden">
+          {{ task.description }}
+        </p>
+      </div>
+    }
+
+    <!-- Comment -->
+    @if (task.comment) {
+      <div class="border-t pt-4 mt-4">
+        <div class="text-sm font-medium text-slate-600 mb-2">Comment</div>
+        <p class="bg-slate-50 rounded-lg p-3 text-slate-700 whitespace-pre-wrap">
+          {{ task.comment }}
+        </p>
+      </div>
+    }
+  </section>
+
+  <!-- Documents -->
+  @if (task.document || (task.attachments && task.attachments.length)) {
+    <section class="mb-6 border-t pt-6">
+      <h3 class="text-lg font-semibold text-slate-900 mb-4">Documents</h3>
+      <div class="grid gap-3">
+        @if (task.document) {
+          <div class="flex items-center gap-2 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+            <mat-icon class="!text-slate-500">description</mat-icon>
+            <div>
+              <div class="font-medium text-slate-900">{{ task.document }}</div>
+              <div class="text-xs text-slate-500">Main document</div>
+            </div>
+          </div>
+        }
+        @for (attachment of task.attachments; track attachment) {
+          <div class="flex items-center gap-2 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+            <mat-icon class="!text-slate-500">attach_file</mat-icon>
+            <div class="font-medium text-slate-900">{{ attachment }}</div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- History -->
+  @if (task.history && task.history.length) {
+    <section class="border-t pt-6">
+      <h3 class="text-lg font-semibold text-slate-900 mb-4">History</h3>
+      <div class="space-y-3">
+        @for (event of task.history; track event.id) {
+          <div class="flex items-start gap-3 text-sm">
+            <mat-icon class="!mt-0.5 flex-shrink-0" [class.text-blue-600]="event.type === 'STATUS_CHANGE'" [class.text-green-600]="event.type === 'COMMENT'" [class.text-purple-600]="event.type === 'ATTACHMENT'">
+              {{ event.type === 'STATUS_CHANGE' ? 'refresh' : event.type === 'COMMENT' ? 'chat' : 'attach_file' }}
+            </mat-icon>
+            <div class="flex-1">
+              <p class="font-medium text-slate-900">{{ event.message }}</p>
+              <p class="text-xs text-slate-500">
+                {{ event.authorName }} • {{ event.createdAt | date:'short' }}
+              </p>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions class="!p-4 border-t border-slate-100 bg-white/80 flex flex-col-reverse lg:flex-row gap-3 justify-end">
+  <button
+    mat-button
+    (click)="closeDrawer()"
+    class="!rounded-xl text-sm"
+  >
+    Close
+  </button>
+  <div class="flex-1 lg:hidden">
+    <button
+      mat-flat-button
+      class="w-full !bg-indigo-600 !text-white !rounded-xl"
+      (click)="editTask()"
+    >
+      Edit Task
+    </button>
+  </div>
+
+  @if (task.status !== 'CLEARED') {
+    <div class="hidden lg:block flex-1">
+      @if (!isCleared() && !isRevisable()) {
+        <button
+          mat-flat-button
+          class="!bg-indigo-600 !text-white !rounded-xl mr-2"
+          (click)="editTask()"
+        >
+          Edit Task
+        </button>
+      }
+      <button
+        mat-flat-button
+        [class.text-white]="!isCleared() && !isRevisable()"
+        [class.bg-indigo-600]="!isCleared() && !isRevisable()"
+        [class.text-slate-500]="isCleared() || isRevisable()"
+        [class.bg-indigo-600]="!isCleared() && !isRevisable()"
+        [class.bg-slate-200]="isCleared() || isRevisable()"
+        class="!rounded-xl"
+        (click)="updateStatus('NEED_REVIEW')"
+        [disabled]="!isAdminReviewAction(task.status)"
+      >
+        Mark Need Review
+      </button>
+      <button
+        mat-flat-button
+        [class.text-white]="isRevisable()"
+        [class.bg-rose-600]="isRevisable()"
+        [class.text-slate-500]="!isRevisable()"
+        [class.bg-rose-600]="isRevisable()"
+        [class.bg-slate-200]="!isRevisable()"
+        class="!rounded-xl mr-2 lg:mr-0"
+        (click)="updateStatus('NEED_REVISION')"
+      >
+        Mark Need Revision
+      </button>
+      <button
+        mat-flat-button
+        [class.text-white]="!isCleared()"
+        [class.bg-emerald-600]="!isCleared()"
+        [class.text-slate-500]="isCleared()"
+        [class.bg-emerald-600]="!isCleared()"
+        [class.bg-slate-200]="isCleared()"
+        class="!rounded-xl"
+        (click)="updateStatus('CLEARED')"
+      >
+        Mark Cleared
+      </button>
+    </div>
+  }
+</mat-dialog-actions>
