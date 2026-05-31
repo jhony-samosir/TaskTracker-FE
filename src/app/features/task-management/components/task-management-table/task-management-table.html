@@ -76,6 +76,10 @@
             <mat-icon>edit</mat-icon>
             <span>Edit task</span>
           </button>
+          <button mat-menu-item class="!text-rose-600" (click)="deleteTask.emit(task)">
+            <mat-icon>delete</mat-icon>
+            <span>Delete task</span>
+          </button>
         </mat-menu>
       </td>
     </ng-container>
@@ -117,6 +121,9 @@
           </button>
           <button mat-menu-item (click)="editTask.emit(task)">
             <mat-icon>edit</mat-icon><span>Edit task</span>
+          </button>
+          <button mat-menu-item class="!text-rose-600" (click)="deleteTask.emit(task)">
+            <mat-icon>delete</mat-icon><span>Delete task</span>
           </button>
         </mat-menu>
       </div>

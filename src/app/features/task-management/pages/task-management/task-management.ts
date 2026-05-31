@@ -56,7 +56,37 @@ export class TaskManagement implements OnInit {
   protected readonly loading = this.taskService.loading;
   protected readonly saving = this.taskService.saving;
   protected readonly error = this.taskService.error;
-  protected readonly users = signal<TaskManagementUserOption[]>(this.taskService.getMockUsers());
+  protected readonly users = computed<TaskManagementUserOption[]>(() => {
+    const users = new Map<number, TaskManagementUserOption>();
+    const currentUser = this.authService.currentUser();
+
+    if (currentUser) {
+      users.set(currentUser.id, {
+        id: currentUser.id,
+        name: currentUser.name,
+        role: currentUser.role,
+      });
+    }
+
+    for (const task of this.tasks()) {
+      if (task.assigneeName) {
+        users.set(task.assigneeId, {
+          id: task.assigneeId,
+          name: task.assigneeName,
+          role: 'EMPLOYEE',
+        });
+      }
+      if (task.reviewerName) {
+        users.set(task.reviewerId, {
+          id: task.reviewerId,
+          name: task.reviewerName,
+          role: 'ADMIN',
+        });
+      }
+    }
+
+    return Array.from(users.values()).sort((a, b) => a.name.localeCompare(b.name));
+  });
 
   protected readonly filters = signal<TaskManagementFilters>({
     search: '',
@@ -176,6 +206,12 @@ export class TaskManagement implements OnInit {
 
   protected updateStatus(task: Task, status: TaskStatus): void {
     this.taskService.updateTaskStatus(task.id, status).subscribe();
+  }
+
+  protected deleteTask(task: Task): void {
+    if (confirm(`Are you sure you want to delete task "${task.title}"?`)) {
+      this.taskService.deleteTask(task.id).subscribe();
+    }
   }
 
   private handleFormResult(result?: TaskFormDialogResult): void {

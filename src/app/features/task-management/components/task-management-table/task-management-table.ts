@@ -25,6 +25,7 @@ export class TaskManagementTable {
   readonly tasks = input.required<Task[]>();
   readonly viewTask = output<Task>();
   readonly editTask = output<Task>();
+  readonly deleteTask = output<Task>();
 
   protected readonly displayedColumns = [
     'title',

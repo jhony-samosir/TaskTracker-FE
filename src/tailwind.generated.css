@@ -446,9 +446,6 @@
   .hidden {
     display: none;
   }
-  .inline {
-    display: inline;
-  }
   .inline-block {
     display: inline-block;
   }
@@ -1476,6 +1473,9 @@
   }
   .\!text-indigo-600 {
     color: var(--color-indigo-600) !important;
+  }
+  .\!text-rose-600 {
+    color: var(--color-rose-600) !important;
   }
   .\!text-slate-300 {
     color: var(--color-slate-300) !important;

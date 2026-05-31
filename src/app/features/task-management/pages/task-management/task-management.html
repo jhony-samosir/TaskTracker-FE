@@ -131,6 +131,7 @@
           [tasks]="tasks()"
           (viewTask)="openDetail($event)"
           (editTask)="openEditDialog($event)"
+          (deleteTask)="deleteTask($event)"
         ></app-task-management-table>
       }
     </section>

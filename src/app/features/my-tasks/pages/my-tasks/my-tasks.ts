@@ -113,7 +113,7 @@ export class MyTasks implements OnInit {
   }
 
   protected updateStatus(event: { task: Task; status: TaskStatus }): void {
-    this.taskService.updateTaskStatus(event.task.id, event.status).subscribe();
+    this.taskService.updateTaskStatus(event.task.id, event.status, true).subscribe();
   }
 
   protected reload(): void {

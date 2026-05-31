@@ -10,12 +10,19 @@ export interface Task {
   document?: string;
   comment?: string;
   status: TaskStatus;
+  statusId?: number;
   priority?: TaskPriority;
   description?: string;
   assigneeName?: string;
   reviewerName?: string;
   createdAt?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+  createdBy?: string;
+  isOverdue?: boolean;
   attachments?: string[];
+  comments?: TaskComment[];
+  documents?: TaskDocument[];
   history?: TaskActivity[];
 }
 
@@ -25,4 +32,21 @@ export interface TaskActivity {
   message: string;
   authorName: string;
   createdAt: string;
+  fromStatus?: TaskStatus;
+  toStatus?: TaskStatus;
+}
+
+export interface TaskComment {
+  id: number;
+  comment: string;
+  authorName: string;
+  createdAt: string;
+}
+
+export interface TaskDocument {
+  id: number;
+  fileName: string;
+  filePath: string;
+  uploadedBy?: string;
+  uploadedAt: string;
 }

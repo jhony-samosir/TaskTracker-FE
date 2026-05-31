@@ -1,8 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
-import { catchError, delay, finalize, map, Observable, of, tap, throwError } from 'rxjs';
+import { catchError, finalize, map, Observable, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Task, TaskPriority, TaskStatus } from '../models/task.model';
+import { Task, TaskActivity, TaskComment, TaskDocument, TaskPriority, TaskStatus } from '../models/task.model';
 import { ApiResponse } from './auth.service';
 
 export interface TaskFilters {
@@ -29,13 +29,109 @@ export interface UpdateTaskRequest extends CreateTaskRequest {}
 
 export interface UpdateTaskStatusRequest {
   status: TaskStatus;
+  remarks?: string;
+}
+
+export interface AddTaskCommentRequest {
+  comment: string;
+}
+
+export interface AttachTaskDocumentRequest {
+  fileName: string;
+  mimeType: string;
+  fileSize?: number;
+  fileBase64: string;
+  documentType?: string;
+  documentVersion?: number;
+}
+
+interface ApiTaskResponse {
+  taskId: number;
+  taskTitle: string;
+  taskDescription?: string | null;
+  assigneeUserId: number;
+  assigneeName: string;
+  reviewerUserId: number;
+  reviewerName: string;
+  deadlineDate: string;
+  taskStatusId: number;
+  statusName: string;
+  createdDate: string;
+  createdBy?: string | null;
+  updatedDate?: string | null;
+  updatedBy?: string | null;
+  isOverdue: boolean;
+  history?: ApiTaskHistoryResponse[];
+  comments?: ApiTaskCommentResponse[];
+  documents?: ApiTaskDocumentResponse[];
+}
+
+interface ApiTaskHistoryResponse {
+  taskHistoryId: number;
+  oldTaskStatusId?: number | null;
+  oldStatusName?: string | null;
+  newTaskStatusId: number;
+  newStatusName: string;
+  actionType: string;
+  remarks?: string | null;
+  createdDate: string;
+  createdBy?: string | null;
+}
+
+interface ApiTaskCommentResponse {
+  taskCommentId: number;
+  reviewerUserId: number;
+  reviewerName: string;
+  commentText: string;
+  createdDate: string;
+  createdBy?: string | null;
+}
+
+interface ApiTaskDocumentResponse {
+  taskDocumentId: number;
+  documentId: number;
+  fileName: string;
+  mimeType: string;
+  fileSize?: number | null;
+  documentType: string;
+  documentVersion: number;
+  createdDate: string;
+  createdBy?: string | null;
+}
+
+interface ApiCreateTaskRequest {
+  taskTitle: string;
+  taskDescription?: string;
+  assigneeUserId: number;
+  reviewerUserId: number;
+  deadlineDate: string;
+  taskStatusId: number;
+}
+
+interface ApiUpdateTaskStatusRequest {
+  taskStatusId: number;
+  remarks?: string;
+}
+
+interface ApiAddTaskCommentRequest {
+  commentText: string;
+}
+
+interface ApiAttachTaskDocumentRequest {
+  fileName: string;
+  mimeType: string;
+  fileSize?: number;
+  fileBase64: string;
+  documentType: string;
+  documentVersion: number;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class TaskService {
-  private readonly apiUrl = `${environment.apiUrl}/tasks`;
+  private readonly tasksApiUrl = `${environment.apiUrl}/tasks`;
+  private readonly myTasksApiUrl = `${environment.apiUrl}/my-tasks`;
   private readonly tasksSignal = signal<Task[]>([]);
   private readonly loadingSignal = signal(false);
   private readonly savingSignal = signal(false);
@@ -57,107 +153,44 @@ export class TaskService {
   }
 
   getMyTasks(filters: TaskFilters = {}): Observable<Task[]> {
-    const params = this.buildParams(filters);
+    const params = this.buildParams(filters, true);
 
-    return this.http.get<ApiResponse<Task[]>>(`${this.apiUrl}/my`, { params }).pipe(
-      tap((response) => {
-        if (!response.succeeded) {
-          throw new Error(response.message || 'Failed to load tasks.');
-        }
-      }),
-      // Backend task endpoints are not available yet; mock fallback keeps the UI usable.
-      catchError(() => of(this.getMockTasks()).pipe(delay(350))),
-      tap((response) => {
-        if (Array.isArray(response)) {
-          return;
-        }
-      }),
-      // Normalize mocked and API data into Task[]
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tap(() => undefined),
-      // Keep this map inline to avoid over-abstracting a tiny adapter.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (source: Observable<ApiResponse<Task[]> | Task[]>) =>
-        new Observable<Task[]>((observer) =>
-          source.subscribe({
-            next: (response) => {
-              const tasks = Array.isArray(response) ? response : response.data;
-              observer.next(this.applyLocalFilters(tasks, filters));
-            },
-            error: (error) => observer.error(error),
-            complete: () => observer.complete(),
-          }),
-        ),
+    return this.http.get<ApiResponse<ApiTaskResponse[]>>(`${this.myTasksApiUrl}`, { params }).pipe(
+      map((response) => this.unwrapResponse(response, 'Failed to load tasks.')),
+      map((tasks) => tasks.map((task) => this.mapTask(task))),
+      map((tasks) => this.applyLocalFilters(tasks, filters)),
     );
   }
 
   getManagedTasks(filters: TaskFilters = {}): Observable<Task[]> {
     const params = this.buildParams(filters);
-    return this.http.get<ApiResponse<Task[]>>(`${this.apiUrl}`, { params }).pipe(
-      tap((response) => {
-        if (!response.succeeded) {
-          throw new Error(response.message || 'Failed to load managed tasks.');
-        }
-      }),
-      catchError(() => of(this.getMockTasks()).pipe(delay(350))),
-      (source: Observable<ApiResponse<Task[]> | Task[]>) =>
-        new Observable<Task[]>((observer) =>
-          source.subscribe({
-            next: (response) => {
-              const tasks = Array.isArray(response) ? response : response.data;
-              observer.next(this.applyLocalFilters(tasks, filters));
-            },
-            error: (error) => observer.error(error),
-            complete: () => observer.complete(),
-          }),
-        ),
+
+    return this.http.get<ApiResponse<ApiTaskResponse[]>>(`${this.tasksApiUrl}`, { params }).pipe(
+      map((response) => this.unwrapResponse(response, 'Failed to load managed tasks.')),
+      map((tasks) => tasks.map((task) => this.mapTask(task))),
+      map((tasks) => this.applyLocalFilters(tasks, filters)),
     );
   }
 
   createTask(request: CreateTaskRequest): Observable<Task> {
     this.savingSignal.set(true);
     this.errorSignal.set(null);
-    return this.http.post<ApiResponse<Task>>(`${this.apiUrl}`, request).pipe(
-      catchError(() => {
-        const mockTask: Task = {
-          id: Math.floor(Math.random() * 1000) + 10,
-          title: request.title,
-          description: request.description,
-          assigneeId: request.assigneeId,
-          assigneeName:
-            this.getMockUsers().find((u) => u.id === request.assigneeId)?.name ||
-            `User ${request.assigneeId}`,
-          reviewerId: request.reviewerId,
-          reviewerName:
-            this.getMockUsers().find((u) => u.id === request.reviewerId)?.name ||
-            `User ${request.reviewerId}`,
-          deadline: request.deadline,
-          priority: request.priority,
-          document: request.document,
-          comment: request.comment,
-          status: 'ASSIGNED',
-          createdAt: new Date().toISOString(),
-          history: [
-            {
-              id: 1,
-              type: 'STATUS_CHANGE',
-              message: 'Task created and assigned.',
-              authorName: 'Admin User',
-              createdAt: new Date().toISOString(),
-            },
-          ],
-        };
-        return of({ succeeded: true, message: 'Mock task created', data: mockTask }).pipe(
-          delay(350),
-        );
+    
+    const apiRequest: ApiCreateTaskRequest = {
+      taskTitle: request.title,
+      taskDescription: request.description,
+      assigneeUserId: request.assigneeId,
+      reviewerUserId: request.reviewerId,
+      deadlineDate: request.deadline,
+      taskStatusId: this.statusRank('ASSIGNED'),
+    };
+
+    return this.http.post<ApiResponse<ApiTaskResponse>>(`${this.tasksApiUrl}`, apiRequest).pipe(
+      map((response) => this.unwrapResponse(response, 'Failed to create task.')),
+      map((data) => this.mapTask(data)),
+      tap((task) => {
+        this.tasksSignal.update((tasks) => [task, ...tasks]);
       }),
-      tap((response) => {
-        if (!response.succeeded) {
-          throw new Error(response.message || 'Failed to create task.');
-        }
-        this.tasksSignal.update((tasks) => [response.data, ...tasks]);
-      }),
-      map((response) => response.data),
       catchError((error: unknown) => {
         this.errorSignal.set(this.getErrorMessage(error));
         return throwError(() => error);
@@ -169,51 +202,25 @@ export class TaskService {
   updateTask(taskId: number, request: UpdateTaskRequest): Observable<Task> {
     this.savingSignal.set(true);
     this.errorSignal.set(null);
-    return this.http.put<ApiResponse<Task>>(`${this.apiUrl}/${taskId}`, request).pipe(
-      catchError(() => {
-        const existingTask = this.tasksSignal().find((t) => t.id === taskId);
-        const updatedTask: Task = {
-          ...existingTask,
-          id: taskId,
-          title: request.title,
-          description: request.description,
-          assigneeId: request.assigneeId,
-          assigneeName:
-            this.getMockUsers().find((u) => u.id === request.assigneeId)?.name ||
-            `User ${request.assigneeId}`,
-          reviewerId: request.reviewerId,
-          reviewerName:
-            this.getMockUsers().find((u) => u.id === request.reviewerId)?.name ||
-            `User ${request.reviewerId}`,
-          deadline: request.deadline,
-          priority: request.priority,
-          document: request.document,
-          comment: request.comment,
-          status: existingTask?.status || 'ASSIGNED',
-          history: [
-            ...(existingTask?.history || []),
-            {
-              id: (existingTask?.history?.length || 0) + 1,
-              type: 'COMMENT',
-              message: 'Task metadata updated by Administrator.',
-              authorName: 'Admin User',
-              createdAt: new Date().toISOString(),
-            },
-          ],
-        };
-        return of({ succeeded: true, message: 'Mock task updated', data: updatedTask }).pipe(
-          delay(350),
-        );
-      }),
-      tap((response) => {
-        if (!response.succeeded) {
-          throw new Error(response.message || 'Failed to update task.');
-        }
+    
+    const existingStatus = this.tasksSignal().find((task) => task.id === taskId)?.status ?? 'ASSIGNED';
+    const apiRequest: ApiCreateTaskRequest = {
+      taskTitle: request.title,
+      taskDescription: request.description,
+      assigneeUserId: request.assigneeId,
+      reviewerUserId: request.reviewerId,
+      deadlineDate: request.deadline,
+      taskStatusId: this.statusRank(existingStatus),
+    };
+
+    return this.http.put<ApiResponse<ApiTaskResponse>>(`${this.tasksApiUrl}/${taskId}`, apiRequest).pipe(
+      map((response) => this.unwrapResponse(response, 'Failed to update task.')),
+      map((data) => this.mapTask(data)),
+      tap((task) => {
         this.tasksSignal.update((tasks) =>
-          tasks.map((task) => (task.id === taskId ? response.data : task)),
+          tasks.map((t) => (t.id === taskId ? task : t)),
         );
       }),
-      map((response) => response.data),
       catchError((error: unknown) => {
         this.errorSignal.set(this.getErrorMessage(error));
         return throwError(() => error);
@@ -222,14 +229,20 @@ export class TaskService {
     );
   }
 
-  getMockUsers(): { id: number; name: string; role: 'ADMIN' | 'EMPLOYEE' }[] {
-    return [
-      { id: 2, name: 'Admin User', role: 'ADMIN' },
-      { id: 10, name: 'Alex Mercer', role: 'EMPLOYEE' },
-      { id: 11, name: 'Sarah Connor', role: 'EMPLOYEE' },
-      { id: 12, name: 'John Doe', role: 'EMPLOYEE' },
-      { id: 13, name: 'Emily Watson', role: 'EMPLOYEE' },
-    ];
+  deleteTask(taskId: number): Observable<boolean> {
+    this.savingSignal.set(true);
+    this.errorSignal.set(null);
+    return this.http.delete<ApiResponse<boolean>>(`${this.tasksApiUrl}/${taskId}`).pipe(
+      map((response) => this.unwrapResponse(response, 'Failed to delete task.')),
+      tap(() => {
+        this.tasksSignal.update((tasks) => tasks.filter((t) => t.id !== taskId));
+      }),
+      catchError((error: unknown) => {
+        this.errorSignal.set(this.getErrorMessage(error));
+        return throwError(() => error);
+      }),
+      finalize(() => this.savingSignal.set(false)),
+    );
   }
 
   private loadTasks(loadFn: () => Observable<Task[]>): void {
@@ -244,33 +257,35 @@ export class TaskService {
       });
   }
 
-  updateTaskStatus(taskId: number, status: TaskStatus): Observable<Task> {
+  updateTaskStatus(
+    taskId: number,
+    statusOrRequest: TaskStatus | UpdateTaskStatusRequest,
+    isMyTask = false,
+  ): Observable<Task> {
+    const request: UpdateTaskStatusRequest =
+      typeof statusOrRequest === 'string' ? { status: statusOrRequest } : statusOrRequest;
     const previousTasks = this.tasksSignal();
     this.savingSignal.set(true);
     this.errorSignal.set(null);
     this.tasksSignal.update((tasks) =>
-      tasks.map((task) => (task.id === taskId ? { ...task, status } : task)),
+      tasks.map((task) => (task.id === taskId ? { ...task, status: request.status } : task)),
     );
 
+    const apiRequest: ApiUpdateTaskStatusRequest = {
+      taskStatusId: this.statusRank(request.status),
+      remarks: request.remarks,
+    };
+
+    const baseUrl = isMyTask ? this.myTasksApiUrl : this.tasksApiUrl;
+    
     return this.http
-      .put<
-        ApiResponse<Task>
-      >(`${this.apiUrl}/${taskId}/status`, { status } satisfies UpdateTaskStatusRequest)
+      .put<ApiResponse<ApiTaskResponse>>(`${baseUrl}/${taskId}/status`, apiRequest)
       .pipe(
-        // Backend task endpoints are not available yet; mock fallback keeps optimistic flow testable.
-        catchError(() =>
-          of({
-            succeeded: true,
-            message: 'Task status updated.',
-            data: this.findTask(taskId, status),
-          }).pipe(delay(250)),
-        ),
-        tap((response) => {
-          if (!response.succeeded) {
-            throw new Error(response.message || 'Failed to update task status.');
-          }
+        map((response) => this.unwrapResponse(response, 'Failed to update task status.')),
+        map((data) => this.mapTask(data)),
+        tap((task) => {
           this.tasksSignal.update((tasks) =>
-            tasks.map((task) => (task.id === taskId ? { ...task, ...response.data } : task)),
+            tasks.map((t) => (t.id === taskId ? { ...t, ...task } : t)),
           );
         }),
         catchError((error: unknown) => {
@@ -279,37 +294,188 @@ export class TaskService {
           return throwError(() => error);
         }),
         finalize(() => this.savingSignal.set(false)),
-        (source: Observable<ApiResponse<Task>>) =>
-          new Observable<Task>((observer) =>
-            source.subscribe({
-              next: (response) => observer.next(response.data),
-              error: (error) => observer.error(error),
-              complete: () => observer.complete(),
-            }),
-          ),
       );
   }
 
-  private buildParams(filters: TaskFilters): HttpParams {
+  addComment(taskId: number, request: AddTaskCommentRequest, isMyTask = false): Observable<TaskComment> {
+    this.savingSignal.set(true);
+    this.errorSignal.set(null);
+
+    const baseUrl = isMyTask ? this.myTasksApiUrl : this.tasksApiUrl;
+    const apiRequest: ApiAddTaskCommentRequest = { commentText: request.comment };
+
+    return this.http
+      .post<ApiResponse<ApiTaskCommentResponse>>(`${baseUrl}/${taskId}/comments`, apiRequest)
+      .pipe(
+        map((response) => this.unwrapResponse(response, 'Failed to add comment.')),
+        map((comment) => this.mapComment(comment)),
+        tap((comment) => {
+          this.tasksSignal.update((tasks) =>
+            tasks.map((task) =>
+              task.id === taskId
+                ? {
+                    ...task,
+                    comment: comment.comment,
+                    comments: [comment, ...(task.comments ?? [])],
+                    history: [
+                      {
+                        id: Date.now(),
+                        type: 'COMMENT',
+                        message: comment.comment,
+                        authorName: comment.authorName,
+                        createdAt: comment.createdAt,
+                      },
+                      ...(task.history ?? []),
+                    ],
+                  }
+                : task,
+            ),
+          );
+        }),
+        catchError((error: unknown) => {
+          this.errorSignal.set(this.getErrorMessage(error));
+          return throwError(() => error);
+        }),
+        finalize(() => this.savingSignal.set(false)),
+      );
+  }
+
+  attachDocument(
+    taskId: number,
+    request: AttachTaskDocumentRequest,
+  ): Observable<TaskDocument> {
+    this.savingSignal.set(true);
+    this.errorSignal.set(null);
+
+    const apiRequest: ApiAttachTaskDocumentRequest = {
+      fileName: request.fileName,
+      mimeType: request.mimeType,
+      fileSize: request.fileSize,
+      fileBase64: request.fileBase64,
+      documentType: request.documentType ?? 'Attachment',
+      documentVersion: request.documentVersion ?? 1,
+    };
+
+    return this.http
+      .post<ApiResponse<ApiTaskDocumentResponse>>(`${this.tasksApiUrl}/${taskId}/documents`, apiRequest)
+      .pipe(
+        map((response) => this.unwrapResponse(response, 'Failed to attach document.')),
+        map((document) => this.mapDocument(document)),
+        tap((document) => {
+          this.tasksSignal.update((tasks) =>
+            tasks.map((task) =>
+              task.id === taskId
+                ? {
+                    ...task,
+                    document: task.document ?? document.fileName,
+                    attachments: [...(task.attachments ?? []), document.fileName],
+                    documents: [...(task.documents ?? []), document],
+                    history: [
+                      {
+                        id: Date.now(),
+                        type: 'ATTACHMENT',
+                        message: `Attached ${document.fileName}`,
+                        authorName: document.uploadedBy ?? 'System',
+                        createdAt: document.uploadedAt,
+                      },
+                      ...(task.history ?? []),
+                    ],
+                  }
+                : task,
+            ),
+          );
+        }),
+        catchError((error: unknown) => {
+          this.errorSignal.set(this.getErrorMessage(error));
+          return throwError(() => error);
+        }),
+        finalize(() => this.savingSignal.set(false)),
+      );
+  }
+
+  private buildParams(filters: TaskFilters, isMyTask = false): HttpParams {
     let params = new HttpParams();
 
     if (filters.search) params = params.set('search', filters.search);
-    if (filters.status) params = params.set('status', filters.status);
-    if (filters.priority) params = params.set('priority', filters.priority);
-    if (filters.assigneeId) params = params.set('assigneeId', String(filters.assigneeId));
-    if (filters.reviewerId) params = params.set('reviewerId', String(filters.reviewerId));
+    if (filters.status) params = params.set('statusId', String(this.statusRank(filters.status)));
+    if (!isMyTask && filters.assigneeId) {
+      params = params.set('assigneeId', String(filters.assigneeId));
+    }
+    if (!isMyTask && filters.reviewerId) {
+      params = params.set('reviewerId', String(filters.reviewerId));
+    }
     if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
 
     return params;
   }
 
-  private findTask(taskId: number, status: TaskStatus): Task {
-    const task = this.tasksSignal().find((item) => item.id === taskId);
-    if (!task) {
-      throw new Error('Task not found.');
+  private unwrapResponse<T>(response: ApiResponse<T>, errorMessage: string): T {
+    if (!response.succeeded) {
+      throw new Error(response.message || errorMessage);
     }
 
-    return { ...task, status };
+    return response.data;
+  }
+
+  private mapTask(apiTask: ApiTaskResponse): Task {
+    const documents = (apiTask.documents ?? []).map((document) => this.mapDocument(document));
+    const comments = (apiTask.comments ?? []).map((comment) => this.mapComment(comment));
+
+    return {
+      id: apiTask.taskId,
+      title: apiTask.taskTitle,
+      assigneeId: apiTask.assigneeUserId,
+      reviewerId: apiTask.reviewerUserId,
+      deadline: apiTask.deadlineDate.split('T')[0],
+      document: documents[0]?.fileName,
+      comment: comments[0]?.comment,
+      status: this.reverseStatusRank(apiTask.taskStatusId),
+      statusId: apiTask.taskStatusId,
+      priority: 'MEDIUM',
+      description: apiTask.taskDescription ?? undefined,
+      assigneeName: apiTask.assigneeName,
+      reviewerName: apiTask.reviewerName,
+      createdAt: apiTask.createdDate,
+      createdBy: apiTask.createdBy ?? undefined,
+      updatedAt: apiTask.updatedDate ?? undefined,
+      updatedBy: apiTask.updatedBy ?? undefined,
+      isOverdue: apiTask.isOverdue,
+      attachments: documents.map((document) => document.fileName),
+      comments,
+      documents,
+      history: (apiTask.history ?? []).map((history) => this.mapHistory(history)),
+    };
+  }
+
+  private mapHistory(history: ApiTaskHistoryResponse): TaskActivity {
+    return {
+      id: history.taskHistoryId,
+      type: history.actionType === 'ATTACHMENT' ? 'ATTACHMENT' : 'STATUS_CHANGE',
+      message: history.remarks ?? history.newStatusName,
+      authorName: history.createdBy ?? 'System',
+      createdAt: history.createdDate,
+      fromStatus: history.oldStatusName ? this.reverseStatusName(history.oldStatusName) : undefined,
+      toStatus: this.reverseStatusName(history.newStatusName),
+    };
+  }
+
+  private mapComment(comment: ApiTaskCommentResponse): TaskComment {
+    return {
+      id: comment.taskCommentId,
+      comment: comment.commentText,
+      authorName: comment.reviewerName,
+      createdAt: comment.createdDate,
+    };
+  }
+
+  private mapDocument(document: ApiTaskDocumentResponse): TaskDocument {
+    return {
+      id: document.taskDocumentId,
+      fileName: document.fileName,
+      filePath: `${document.documentId}/${document.fileName}`,
+      uploadedBy: document.createdBy ?? undefined,
+      uploadedAt: document.createdDate,
+    };
   }
 
   private getErrorMessage(error: unknown): string {
@@ -387,98 +553,23 @@ export class TaskService {
     return rank[status];
   }
 
-  private getMockTasks(): Task[] {
-    return [
-      {
-        id: 1,
-        title: 'Fix login validation errors',
-        assigneeId: 10,
-        assigneeName: 'Alex Mercer',
-        reviewerId: 2,
-        reviewerName: 'Admin User',
-        deadline: '2026-06-05',
-        createdAt: '2026-05-25T09:30:00Z',
-        document: 'login-validation.pdf',
-        attachments: ['login-validation.pdf'],
-        comment: 'Need to check frontend and backend validation.',
-        description: 'Resolve validation state mismatch between login form and API responses.',
-        priority: 'HIGH',
-        status: 'ON_PROGRESS',
-        history: [
-          {
-            id: 1,
-            type: 'STATUS_CHANGE',
-            message: 'Moved to On Progress',
-            authorName: 'Alex Mercer',
-            createdAt: '2026-05-31T08:00:00Z',
-          },
-          {
-            id: 2,
-            type: 'COMMENT',
-            message: 'Backend error banner already implemented.',
-            authorName: 'Admin User',
-            createdAt: '2026-05-31T09:15:00Z',
-          },
-        ],
-      },
-      {
-        id: 2,
-        title: 'Update user profile page',
-        assigneeId: 10,
-        assigneeName: 'Alex Mercer',
-        reviewerId: 2,
-        reviewerName: 'Admin User',
-        deadline: '2026-06-03',
-        createdAt: '2026-05-29T11:00:00Z',
-        description: 'Improve profile information density and responsive layout.',
-        priority: 'MEDIUM',
-        status: 'ASSIGNED',
-      },
-      {
-        id: 3,
-        title: 'Prepare release notes for v2.1',
-        assigneeId: 11,
-        assigneeName: 'Sarah Connor',
-        reviewerId: 2,
-        reviewerName: 'Admin User',
-        deadline: '2026-06-10',
-        createdAt: '2026-05-27T13:45:00Z',
-        document: 'release-notes-v2.1.docx',
-        attachments: ['release-notes-v2.1.docx'],
-        comment: 'Include all new features and bug fixes.',
-        description: 'Draft release notes with screenshots and migration notes.',
-        priority: 'LOW',
-        status: 'NEED_REVIEW',
-      },
-      {
-        id: 4,
-        title: 'Database migration script',
-        assigneeId: 12,
-        assigneeName: 'John Doe',
-        reviewerId: 2,
-        reviewerName: 'Admin User',
-        deadline: '2026-05-30',
-        createdAt: '2026-05-26T16:30:00Z',
-        document: 'migration-v2.1.sql',
-        attachments: ['migration-v2.1.sql'],
-        description: 'Convert audit date columns to timestamp with time zone.',
-        priority: 'URGENT',
-        status: 'NEED_REVISION',
-      },
-      {
-        id: 5,
-        title: 'Code review for auth module',
-        assigneeId: 13,
-        assigneeName: 'Emily Watson',
-        reviewerId: 2,
-        reviewerName: 'Admin User',
-        deadline: '2026-06-01',
-        createdAt: '2026-05-24T10:10:00Z',
-        comment: 'Looks good, approve when ready.',
-        description: 'Review JWT refresh-token implementation and route guard behavior.',
-        priority: 'HIGH',
-        status: 'CLEARED',
-      },
-    ];
+  private reverseStatusRank(statusId: number): TaskStatus {
+    const rank: Record<number, TaskStatus> = {
+      1: 'ASSIGNED',
+      2: 'ON_PROGRESS',
+      3: 'NEED_REVIEW',
+      4: 'NEED_REVISION',
+      5: 'CLEARED',
+    };
+    return rank[statusId] ?? 'ASSIGNED';
+  }
+
+  private reverseStatusName(name: string): TaskStatus {
+    const n = name.toUpperCase().replace(' ', '_');
+    if (n === 'ON_PROGRESS' || n === 'IN_PROGRESS') return 'ON_PROGRESS';
+    if (n === 'NEED_REVIEW' || n === 'NEEDS_REVIEW') return 'NEED_REVIEW';
+    if (n === 'NEED_REVISION' || n === 'NEEDS_REVISION') return 'NEED_REVISION';
+    if (n === 'CLEARED') return 'CLEARED';
+    return 'ASSIGNED';
   }
 }
