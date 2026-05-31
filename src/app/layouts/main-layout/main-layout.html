@@ -43,8 +43,12 @@
         </button>
 
         <div class="hidden sm:flex items-center gap-1.5 text-sm text-slate-400">
-          <span class="hover:text-slate-600 cursor-pointer transition-colors">Pages</span>
-          <mat-icon class="text-base">chevron_right</mat-icon>
+          <a
+            routerLink="/dashboard"
+            class="hover:text-indigo-600 hover:font-medium cursor-pointer transition-colors"
+            >Home</a
+          >
+          <mat-icon class="text-base text-slate-300">chevron_right</mat-icon>
           <span class="font-semibold text-slate-800">{{ pageTitle() }}</span>
         </div>
       </div>

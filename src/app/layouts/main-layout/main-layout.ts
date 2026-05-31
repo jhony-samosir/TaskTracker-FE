@@ -9,7 +9,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 import { MenuItem } from '../../core/models/menu-item.model';
 import { AuthService } from '../../core/services/auth.service';
@@ -23,7 +23,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
 
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, MatIconModule, MatTooltipModule, SidebarComponent],
+  imports: [RouterOutlet, RouterLink, MatIconModule, MatTooltipModule, SidebarComponent],
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
