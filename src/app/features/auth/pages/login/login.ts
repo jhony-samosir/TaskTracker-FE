@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -23,10 +24,11 @@ export class LoginComponent {
 
   showPassword = signal(false);
   isLoading = signal(false);
+  errorMessage = signal<string | null>(null);
 
   readonly demoAccounts: DemoAccount[] = [
-    { label: 'Admin', email: 'admin@mail.com', role: 'ADMIN' },
-    { label: 'Employee', email: 'employee@mail.com', role: 'EMPLOYEE' },
+    { label: 'Admin', email: 'admin@tasktracker.com', role: 'ADMIN' },
+    { label: 'Employee', email: 'employee@tasktracker.com', role: 'EMPLOYEE' },
   ];
 
   loginForm = this.fb.group({
@@ -42,11 +44,13 @@ export class LoginComponent {
   isDisabled = computed(() => this.loginForm.invalid || this.isLoading());
 
   fillDemo(account: DemoAccount) {
-    this.loginForm.patchValue({ email: account.email, password: 'bebas dulu' });
+    this.loginForm.patchValue({ email: account.email, password: 'Pass1234.' });
     this.loginForm.markAsUntouched();
+    this.errorMessage.set(null);
   }
 
   onSubmit() {
+    this.errorMessage.set(null);
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
@@ -54,31 +58,27 @@ export class LoginComponent {
 
     this.isLoading.set(true);
 
-    const { email, rememberMe } = this.loginForm.getRawValue();
+    const { email, password, rememberMe } = this.loginForm.getRawValue();
 
-    // Simulate network request
-    setTimeout(() => {
-      const role = email === 'admin@mail.com' ? 'ADMIN' : 'EMPLOYEE';
-      const name = role === 'ADMIN' ? 'Admin User' : 'Employee User';
+    this.authService.login({ email: email ?? '', password: password ?? '' }).subscribe({
+      next: () => {
+        if (rememberMe) {
+          localStorage.setItem('tasktracker-remembered-email', email ?? '');
+        } else {
+          localStorage.removeItem('tasktracker-remembered-email');
+        }
 
-      localStorage.setItem(
-        'tasktracker-user',
-        JSON.stringify({
-          id: role === 'ADMIN' ? 1 : 2,
-          name,
-          email,
-          role,
-        }),
-      );
-
-      if (rememberMe) {
-        localStorage.setItem('tasktracker-remembered-email', email ?? '');
-      } else {
-        localStorage.removeItem('tasktracker-remembered-email');
-      }
-
-      this.isLoading.set(false);
-      this.router.navigate(['/dashboard']);
-    }, 1200);
+        this.isLoading.set(false);
+        this.router.navigate(['/dashboard']);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.isLoading.set(false);
+        if (error.error?.message) {
+          this.errorMessage.set(error.error.message);
+        } else {
+          this.errorMessage.set('An error occurred during login. Please try again.');
+        }
+      },
+    });
   }
 }

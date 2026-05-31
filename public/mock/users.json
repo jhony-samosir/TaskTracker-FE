@@ -1,14 +1,14 @@
 [
   {
     "id": 1,
-    "email": "admin@mail.com",
-    "password": "123456",
+    "email": "admin@tasktracker.com",
+    "password": "Pass1234.",
     "role": "ADMIN"
   },
   {
     "id": 2,
-    "email": "employee@mail.com",
-    "password": "123456",
+    "email": "employee@tasktracker.com",
+    "password": "Pass1234.",
     "role": "EMPLOYEE"
   }
 ]
