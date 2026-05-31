@@ -57,7 +57,11 @@
     @if (task().attachments?.length) {
       <div class="flex items-center gap-2">
         <mat-icon class="!h-4 !w-4 !text-base text-slate-400">attach_file</mat-icon>
-        <span>{{ task().attachments!.length }} attachment{{ task().attachments!.length > 1 ? 's' : '' }}</span>
+        <span
+          >{{ task().attachments!.length }} attachment{{
+            task().attachments!.length > 1 ? 's' : ''
+          }}</span
+        >
       </div>
     }
   </div>

@@ -2,8 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import { catchError, delay, finalize, Observable, of, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiResponse } from './auth.service';
 import { Task, TaskPriority, TaskStatus } from '../models/task.model';
+import { ApiResponse } from './auth.service';
 
 export interface TaskFilters {
   search?: string;
@@ -66,7 +66,7 @@ export class TaskService {
       tap(() => undefined),
       // Keep this map inline to avoid over-abstracting a tiny adapter.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ((source: Observable<ApiResponse<Task[]> | Task[]>) =>
+      (source: Observable<ApiResponse<Task[]> | Task[]>) =>
         new Observable<Task[]>((observer) =>
           source.subscribe({
             next: (response) => {
@@ -76,7 +76,7 @@ export class TaskService {
             error: (error) => observer.error(error),
             complete: () => observer.complete(),
           }),
-        ))
+        ),
     );
   }
 
@@ -89,10 +89,18 @@ export class TaskService {
     );
 
     return this.http
-      .put<ApiResponse<Task>>(`${this.apiUrl}/${taskId}/status`, { status } satisfies UpdateTaskStatusRequest)
+      .put<
+        ApiResponse<Task>
+      >(`${this.apiUrl}/${taskId}/status`, { status } satisfies UpdateTaskStatusRequest)
       .pipe(
         // Backend task endpoints are not available yet; mock fallback keeps optimistic flow testable.
-        catchError(() => of({ succeeded: true, message: 'Task status updated.', data: this.findTask(taskId, status) }).pipe(delay(250))),
+        catchError(() =>
+          of({
+            succeeded: true,
+            message: 'Task status updated.',
+            data: this.findTask(taskId, status),
+          }).pipe(delay(250)),
+        ),
         tap((response) => {
           if (!response.succeeded) {
             throw new Error(response.message || 'Failed to update task status.');
@@ -107,14 +115,14 @@ export class TaskService {
           return throwError(() => error);
         }),
         finalize(() => this.savingSignal.set(false)),
-        ((source: Observable<ApiResponse<Task>>) =>
+        (source: Observable<ApiResponse<Task>>) =>
           new Observable<Task>((observer) =>
             source.subscribe({
               next: (response) => observer.next(response.data),
               error: (error) => observer.error(error),
               complete: () => observer.complete(),
             }),
-          )),
+          ),
       );
   }
 
@@ -209,8 +217,20 @@ export class TaskService {
         priority: 'HIGH',
         status: 'ON_PROGRESS',
         history: [
-          { id: 1, type: 'STATUS_CHANGE', message: 'Moved to On Progress', authorName: 'Alex Mercer', createdAt: '2026-05-31T08:00:00Z' },
-          { id: 2, type: 'COMMENT', message: 'Backend error banner already implemented.', authorName: 'Admin User', createdAt: '2026-05-31T09:15:00Z' },
+          {
+            id: 1,
+            type: 'STATUS_CHANGE',
+            message: 'Moved to On Progress',
+            authorName: 'Alex Mercer',
+            createdAt: '2026-05-31T08:00:00Z',
+          },
+          {
+            id: 2,
+            type: 'COMMENT',
+            message: 'Backend error banner already implemented.',
+            authorName: 'Admin User',
+            createdAt: '2026-05-31T09:15:00Z',
+          },
         ],
       },
       {

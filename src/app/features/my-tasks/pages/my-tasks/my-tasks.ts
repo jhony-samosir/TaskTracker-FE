@@ -1,15 +1,22 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Task, TaskPriority, TaskStatus } from '../../../../core/models/task.model';
 import { TaskFilters, TaskService } from '../../../../core/services/task.service';
 import { TaskBoardComponent } from '../../components/task-board/task-board';
 import {
-  TaskDetailDrawerComponent,
   TaskDetailDialogData,
+  TaskDetailDrawerComponent,
 } from '../../components/task-detail-drawer/task-detail-drawer';
 import { TaskFilterComponent, TaskFilterValues } from '../../components/task-filter/task-filter';
 

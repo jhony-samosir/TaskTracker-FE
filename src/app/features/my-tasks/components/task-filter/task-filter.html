@@ -13,7 +13,12 @@
       (ngModelChange)="onSearchChange($event)"
     />
     @if (search()) {
-      <button matSuffix mat-icon-button (click)="onSearchChange('')" class="!w-6 !h-6 !leading-none">
+      <button
+        matSuffix
+        mat-icon-button
+        (click)="onSearchChange('')"
+        class="!w-6 !h-6 !leading-none"
+      >
         <mat-icon class="text-slate-400 text-lg">close</mat-icon>
       </button>
     }

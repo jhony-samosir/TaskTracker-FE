@@ -45,7 +45,7 @@ body {
   .mat-mdc-dialog-container {
     padding: 0 !important;
   }
-  
+
   /* Slide-in from right animation */
   .mat-mdc-dialog-surface {
     border-radius: 0 !important;
@@ -56,12 +56,12 @@ body {
     box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15) !important;
     transform: translateX(100%) !important;
     transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1) !important;
-    
+
     &.show {
       transform: translateX(0) !important;
     }
   }
-  
+
   /* Backdrop styling */
   .mat-mdc-dialog-backdrop {
     background-color: rgba(0, 0, 0, 0.4) !important;

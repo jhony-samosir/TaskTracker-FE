@@ -38,10 +38,15 @@
             ></app-task-card>
 
             <!-- Custom Drag Placeholder -->
-            <div *cdkDragPlaceholder class="border-2 border-dashed border-indigo-200 bg-indigo-50/50 rounded-2xl h-36"></div>
+            <div
+              *cdkDragPlaceholder
+              class="border-2 border-dashed border-indigo-200 bg-indigo-50/50 rounded-2xl h-36"
+            ></div>
           </div>
         } @empty {
-          <div class="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white/40">
+          <div
+            class="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white/40"
+          >
             <mat-icon class="text-slate-300 !text-3xl !h-8 !w-8">inbox</mat-icon>
             <span class="text-xs text-slate-400 mt-2">No tasks</span>
           </div>
@@ -64,7 +69,9 @@
         <ng-template mat-tab-label>
           <div class="flex items-center gap-1.5 py-1">
             <span class="text-sm font-semibold">{{ col.title }}</span>
-            <span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+            <span
+              class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+            >
               {{ boardState()[col.id].length }}
             </span>
           </div>
@@ -78,7 +85,9 @@
               (statusChange)="onCardStatusChange($event)"
             ></app-task-card>
           } @empty {
-            <div class="flex flex-col items-center justify-center py-16 border border-dashed border-slate-200 rounded-2xl bg-white">
+            <div
+              class="flex flex-col items-center justify-center py-16 border border-dashed border-slate-200 rounded-2xl bg-white"
+            >
               <mat-icon class="text-slate-300 !text-4xl !h-10 !w-10">inbox</mat-icon>
               <span class="text-sm text-slate-400 mt-2">No tasks in this stage</span>
             </div>
