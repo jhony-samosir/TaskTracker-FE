@@ -1,37 +1,74 @@
-<header class="!flex-0 flex justify-between items-center border-b border-slate-100 bg-white p-4">
-  <div class="flex-1 text-left">
-    <h2 mat-dialog-title class="!text-2xl !font-bold !text-slate-900">{{ task.title }}</h2>
-    <p class="text-sm text-slate-500">
-      {{ getStatusLabel(task.status) }} • {{ getPriorityClasses(task.priority || '') }}
-    </p>
+<header class="!flex-0 border-b border-slate-100 bg-white px-5 py-4 sm:px-6">
+  <div class="flex items-start justify-between gap-4">
+    <div class="min-w-0 flex-1 text-left">
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <span [class]="getStatusClasses(task.status)">{{ getStatusLabel(task.status) }}</span>
+        <span [class]="getPriorityClasses(task.priority)"
+          >{{ getPriorityLabel(task.priority) }} Priority</span
+        >
+        @if (isOverdue) {
+          <span class="rounded-md bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+            Overdue
+          </span>
+        }
+      </div>
+      <h2
+        mat-dialog-title
+        class="!m-0 !p-0 !text-xl sm:!text-2xl !font-bold !leading-tight !text-slate-900"
+      >
+        {{ task.title }}
+      </h2>
+    </div>
+    <button mat-icon-button (click)="closeDrawer()" aria-label="Close drawer" class="shrink-0">
+      <mat-icon class="!text-slate-500 hover:!text-slate-700 transition-colors">close</mat-icon>
+    </button>
   </div>
-  <button mat-icon-button (click)="closeDrawer()" aria-label="Close drawer">
-    <mat-icon class="!text-slate-500 hover:!text-slate-700 transition-colors">close</mat-icon>
-  </button>
 </header>
 
-<mat-dialog-content class="!p-4 h-full overflow-y-auto custom-scrollbar">
-  <section class="mb-6">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<mat-dialog-content class="!p-5 sm:!p-6 h-full overflow-y-auto custom-scrollbar !bg-slate-50/60">
+  <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <!-- Task Info -->
-      <div class="space-y-4">
-        <div class="text-sm font-medium text-slate-600">Assignment</div>
-        <p class="font-semibold text-slate-900">{{ task.assigneeName || 'Unassigned' }}</p>
-        <div class="text-xs text-slate-500 mt-1">Reviewer: {{ task.reviewerName || '-' }}</div>
+      <div class="rounded-xl bg-slate-50 p-4">
+        <div class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <mat-icon class="!text-lg !text-indigo-500">person</mat-icon>
+          Assignment
+        </div>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Assignee</dt>
+            <dd class="mt-1 font-semibold text-slate-900">
+              {{ task.assigneeName || 'Unassigned' }}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Reviewer</dt>
+            <dd class="mt-1 font-semibold text-slate-900">{{ task.reviewerName || '-' }}</dd>
+          </div>
+        </dl>
       </div>
 
       <!-- Dates -->
-      <div class="space-y-4">
-        <div class="text-sm font-medium text-slate-600">Dates</div>
-        <dl class="grid grid-cols-2 gap-4 mt-2">
+      <div class="rounded-xl bg-slate-50 p-4">
+        <div class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <mat-icon class="!text-lg !text-indigo-500">event</mat-icon>
+          Timeline
+        </div>
+        <dl class="grid grid-cols-2 gap-4">
           <div>
-            <dt class="text-xs text-slate-500">Created</dt>
-            <dd class="font-semibold text-slate-800">{{ task.createdAt | date:'mediumDate' }}</dd>
+            <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Created</dt>
+            <dd class="mt-1 font-semibold text-slate-800">
+              {{ task.createdAt | date: 'mediumDate' }}
+            </dd>
           </div>
           <div>
-            <dt class="text-xs text-slate-500">Deadline</dt>
-            <dd class="font-semibold" [class.text-rose-600]="isOverdue">
-              {{ task.deadline | date:'mediumDate' }}
+            <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Deadline</dt>
+            <dd
+              class="mt-1 font-semibold"
+              [class.text-rose-600]="isOverdue"
+              [class.text-slate-800]="!isOverdue"
+            >
+              {{ task.deadline | date: 'mediumDate' }}
             </dd>
           </div>
         </dl>
@@ -40,9 +77,12 @@
 
     <!-- Description -->
     @if (task.description) {
-      <div class="border-t pt-4 mt-6">
-        <div class="text-sm font-medium text-slate-600 mb-2">Description</div>
-        <p class="text-slate-800 whitespace-pre-wrap line-clamp-4 max-h-[6rem] overflow-hidden">
+      <div class="mt-5 border-t border-slate-100 pt-5">
+        <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <mat-icon class="!text-lg !text-indigo-500">subject</mat-icon>
+          Description
+        </div>
+        <p class="rounded-xl bg-white text-sm leading-6 text-slate-700 whitespace-pre-wrap">
           {{ task.description }}
         </p>
       </div>
@@ -50,9 +90,14 @@
 
     <!-- Comment -->
     @if (task.comment) {
-      <div class="border-t pt-4 mt-4">
-        <div class="text-sm font-medium text-slate-600 mb-2">Comment</div>
-        <p class="bg-slate-50 rounded-lg p-3 text-slate-700 whitespace-pre-wrap">
+      <div class="mt-5 border-t border-slate-100 pt-5">
+        <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <mat-icon class="!text-lg !text-indigo-500">chat_bubble_outline</mat-icon>
+          Latest Comment
+        </div>
+        <p
+          class="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm leading-6 text-slate-700 whitespace-pre-wrap"
+        >
           {{ task.comment }}
         </p>
       </div>
@@ -61,22 +106,37 @@
 
   <!-- Documents -->
   @if (task.document || (task.attachments && task.attachments.length)) {
-    <section class="mb-6 border-t pt-6">
-      <h3 class="text-lg font-semibold text-slate-900 mb-4">Documents</h3>
+    <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+      <h3 class="mb-4 flex items-center gap-2 text-base font-bold text-slate-900">
+        <mat-icon class="!text-xl !text-indigo-500">folder_open</mat-icon>
+        Documents
+      </h3>
       <div class="grid gap-3">
         @if (task.document) {
-          <div class="flex items-center gap-2 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-            <mat-icon class="!text-slate-500">description</mat-icon>
-            <div>
-              <div class="font-medium text-slate-900">{{ task.document }}</div>
+          <div
+            class="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 transition-colors hover:bg-slate-100"
+          >
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500"
+            >
+              <mat-icon>description</mat-icon>
+            </span>
+            <div class="min-w-0">
+              <div class="truncate font-semibold text-slate-900">{{ task.document }}</div>
               <div class="text-xs text-slate-500">Main document</div>
             </div>
           </div>
         }
         @for (attachment of task.attachments; track attachment) {
-          <div class="flex items-center gap-2 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-            <mat-icon class="!text-slate-500">attach_file</mat-icon>
-            <div class="font-medium text-slate-900">{{ attachment }}</div>
+          <div
+            class="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 transition-colors hover:bg-slate-100"
+          >
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500"
+            >
+              <mat-icon>attach_file</mat-icon>
+            </span>
+            <div class="min-w-0 truncate font-semibold text-slate-900">{{ attachment }}</div>
           </div>
         }
       </div>
@@ -85,18 +145,38 @@
 
   <!-- History -->
   @if (task.history && task.history.length) {
-    <section class="border-t pt-6">
-      <h3 class="text-lg font-semibold text-slate-900 mb-4">History</h3>
-      <div class="space-y-3">
+    <section class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+      <h3 class="mb-4 flex items-center gap-2 text-base font-bold text-slate-900">
+        <mat-icon class="!text-xl !text-indigo-500">history</mat-icon>
+        Activity History
+      </h3>
+      <div
+        class="relative space-y-4 before:absolute before:left-5 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-slate-200"
+      >
         @for (event of task.history; track event.id) {
-          <div class="flex items-start gap-3 text-sm">
-            <mat-icon class="!mt-0.5 flex-shrink-0" [class.text-blue-600]="event.type === 'STATUS_CHANGE'" [class.text-green-600]="event.type === 'COMMENT'" [class.text-purple-600]="event.type === 'ATTACHMENT'">
-              {{ event.type === 'STATUS_CHANGE' ? 'refresh' : event.type === 'COMMENT' ? 'chat' : 'attach_file' }}
-            </mat-icon>
-            <div class="flex-1">
-              <p class="font-medium text-slate-900">{{ event.message }}</p>
-              <p class="text-xs text-slate-500">
-                {{ event.authorName }} • {{ event.createdAt | date:'short' }}
+          <div class="relative flex items-start gap-3 text-sm">
+            <span
+              class="z-[1] flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white ring-4 ring-white"
+            >
+              <mat-icon
+                class="!text-xl"
+                [class.text-blue-600]="event.type === 'STATUS_CHANGE'"
+                [class.text-green-600]="event.type === 'COMMENT'"
+                [class.text-purple-600]="event.type === 'ATTACHMENT'"
+              >
+                {{
+                  event.type === 'STATUS_CHANGE'
+                    ? 'refresh'
+                    : event.type === 'COMMENT'
+                      ? 'chat'
+                      : 'attach_file'
+                }}
+              </mat-icon>
+            </span>
+            <div class="min-w-0 flex-1 rounded-xl bg-slate-50 p-3">
+              <p class="font-semibold text-slate-900">{{ event.message }}</p>
+              <p class="mt-1 text-xs text-slate-500">
+                {{ event.authorName }} • {{ event.createdAt | date: 'short' }}
               </p>
             </div>
           </div>
@@ -106,72 +186,70 @@
   }
 </mat-dialog-content>
 
-<mat-dialog-actions class="!p-4 border-t border-slate-100 bg-white/80 flex flex-col-reverse lg:flex-row gap-3 justify-end">
+<mat-dialog-actions
+  class="!p-4 border-t border-slate-100 bg-white flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center"
+>
   <button
     mat-button
     (click)="closeDrawer()"
-    class="!rounded-xl text-sm"
+    class="!rounded-xl text-sm !h-10 hover:!bg-slate-50 shrink-0"
   >
     Close
   </button>
-  <div class="flex-1 lg:hidden">
-    <button
-      mat-flat-button
-      class="w-full !bg-indigo-600 !text-white !rounded-xl"
-      (click)="editTask()"
-    >
-      Edit Task
-    </button>
-  </div>
 
   @if (task.status !== 'CLEARED') {
-    <div class="hidden lg:block flex-1">
-      @if (!isCleared() && !isRevisable()) {
-        <button
-          mat-flat-button
-          class="!bg-indigo-600 !text-white !rounded-xl mr-2"
-          (click)="editTask()"
-        >
-          Edit Task
-        </button>
-      }
+    <div class="flex flex-col sm:flex-row gap-2 shrink-0">
       <button
         mat-flat-button
-        [class.text-white]="!isCleared() && !isRevisable()"
-        [class.bg-indigo-600]="!isCleared() && !isRevisable()"
-        [class.text-slate-500]="isCleared() || isRevisable()"
-        [class.bg-indigo-600]="!isCleared() && !isRevisable()"
-        [class.bg-slate-200]="isCleared() || isRevisable()"
-        class="!rounded-xl"
+        class="!bg-indigo-600 !text-white !rounded-xl !h-10 text-sm"
+        (click)="editTask()"
+      >
+        <mat-icon class="!text-lg">edit</mat-icon>
+        Edit Task
+      </button>
+
+      <button
+        mat-flat-button
+        [class.!text-white]="!isCleared() && !isRevisable()"
+        [class.!bg-indigo-600]="!isCleared() && !isRevisable()"
+        [class.!text-slate-500]="isCleared() || isRevisable()"
+        [class.!bg-slate-100]="isCleared() || isRevisable()"
+        class="!rounded-xl !h-10 text-sm"
         (click)="updateStatus('NEED_REVIEW')"
         [disabled]="!isAdminReviewAction(task.status)"
       >
+        <mat-icon class="!text-lg">rate_review</mat-icon>
         Mark Need Review
       </button>
+
       <button
         mat-flat-button
-        [class.text-white]="isRevisable()"
-        [class.bg-rose-600]="isRevisable()"
-        [class.text-slate-500]="!isRevisable()"
-        [class.bg-rose-600]="isRevisable()"
-        [class.bg-slate-200]="!isRevisable()"
-        class="!rounded-xl mr-2 lg:mr-0"
+        [class.!text-white]="isRevisable()"
+        [class.!bg-rose-600]="isRevisable()"
+        [class.!text-slate-500]="!isRevisable()"
+        [class.!bg-slate-100]="!isRevisable()"
+        class="!rounded-xl !h-10 text-sm"
         (click)="updateStatus('NEED_REVISION')"
       >
-        Mark Need Revision
+        <mat-icon class="!text-lg">assignment_returned</mat-icon>
+        Need Revision
       </button>
+
       <button
         mat-flat-button
-        [class.text-white]="!isCleared()"
-        [class.bg-emerald-600]="!isCleared()"
-        [class.text-slate-500]="isCleared()"
-        [class.bg-emerald-600]="!isCleared()"
-        [class.bg-slate-200]="isCleared()"
-        class="!rounded-xl"
+        [class.!text-white]="!isCleared()"
+        [class.!bg-emerald-600]="!isCleared()"
+        [class.!text-slate-500]="isCleared()"
+        [class.!bg-slate-100]="isCleared()"
+        class="!rounded-xl !h-10 text-sm"
         (click)="updateStatus('CLEARED')"
       >
+        <mat-icon class="!text-lg">check_circle</mat-icon>
         Mark Cleared
       </button>
     </div>
+  } @else {
+    <!-- Empty element for spacing when cleared -->
+    <div></div>
   }
 </mat-dialog-actions>

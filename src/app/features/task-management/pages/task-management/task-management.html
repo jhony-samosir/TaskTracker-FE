@@ -4,7 +4,9 @@
       <mat-icon class="!text-amber-600">lock</mat-icon>
       <div>
         <h1 class="text-xl font-bold text-amber-900">Admin access required</h1>
-        <p class="mt-1 text-sm text-amber-700">Task Management is available only for administrators.</p>
+        <p class="mt-1 text-sm text-amber-700">
+          Task Management is available only for administrators.
+        </p>
       </div>
     </section>
   } @else {
@@ -86,7 +88,9 @@
     <!-- Content -->
     <section class="flex-1 relative">
       @if (loading()) {
-        <div class="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl z-10">
+        <div
+          class="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl z-10"
+        >
           <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
           <span class="mt-3 text-sm font-semibold text-slate-600">Loading managed tasks...</span>
         </div>
@@ -98,7 +102,11 @@
           <div class="flex-1">
             <h4 class="text-sm font-semibold text-rose-800">Unable to load tasks</h4>
             <p class="text-xs text-rose-600 mt-1">{{ errorMsg }}</p>
-            <button mat-flat-button class="!bg-rose-600 !text-white !rounded-xl !mt-3 !h-9 !text-xs" (click)="reload()">
+            <button
+              mat-flat-button
+              class="!bg-rose-600 !text-white !rounded-xl !mt-3 !h-9 !text-xs"
+              (click)="reload()"
+            >
               Retry
             </button>
           </div>
@@ -110,7 +118,11 @@
           <mat-icon class="!text-5xl !w-16 !h-16 !text-slate-300">assignment</mat-icon>
           <h3 class="mt-4 text-lg font-semibold text-slate-900">No tasks found</h3>
           <p class="mt-1 text-sm text-slate-500">Create a new task or adjust your filters.</p>
-          <button mat-flat-button class="!mt-4 !bg-indigo-600 !text-white !rounded-xl" (click)="openCreateDialog()">
+          <button
+            mat-flat-button
+            class="!mt-4 !bg-indigo-600 !text-white !rounded-xl"
+            (click)="openCreateDialog()"
+          >
             Create Task
           </button>
         </div>

@@ -6,11 +6,21 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { TaskPriority, TaskStatus } from '../../../../core/models/task.model';
-import { TaskManagementFilters, TaskManagementUserOption } from '../../models/task-management.model';
+import {
+  TaskManagementFilters,
+  TaskManagementUserOption,
+} from '../../models/task-management.model';
 
 @Component({
   selector: 'app-task-management-toolbar',
-  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSelectModule],
+  imports: [
+    FormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatSelectModule,
+  ],
   templateUrl: './task-management-toolbar.html',
   styleUrl: './task-management-toolbar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

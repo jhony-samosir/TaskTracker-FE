@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,11 +13,16 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Task, TaskPriority, TaskStatus } from '../../../../core/models/task.model';
 import { AuthService } from '../../../../core/services/auth.service';
-import { CreateTaskRequest, TaskFilters, TaskService, UpdateTaskRequest } from '../../../../core/services/task.service';
+import {
+  CreateTaskRequest,
+  TaskFilters,
+  TaskService,
+  UpdateTaskRequest,
+} from '../../../../core/services/task.service';
+import { TaskFormDialog } from '../../components/task-form-dialog/task-form-dialog';
 import { TaskManagementDetailDrawer } from '../../components/task-management-detail-drawer/task-management-detail-drawer';
 import { TaskManagementTable } from '../../components/task-management-table/task-management-table';
 import { TaskManagementToolbar } from '../../components/task-management-toolbar/task-management-toolbar';
-import { TaskFormDialog } from '../../components/task-form-dialog/task-form-dialog';
 import {
   TaskFormDialogResult,
   TaskManagementDetailResult,
@@ -108,7 +120,14 @@ export class TaskManagement implements OnInit {
   }
 
   protected clearFilters(): void {
-    this.onFilterChange({ search: '', status: '', priority: '', assigneeId: '', reviewerId: '', sortBy: 'deadline' });
+    this.onFilterChange({
+      search: '',
+      status: '',
+      priority: '',
+      assigneeId: '',
+      reviewerId: '',
+      sortBy: 'deadline',
+    });
   }
 
   protected reload(): void {
@@ -136,20 +155,22 @@ export class TaskManagement implements OnInit {
   }
 
   protected openDetail(task: Task): void {
-    const ref = this.dialog.open<TaskManagementDetailDrawer, unknown, TaskManagementDetailResult>(TaskManagementDetailDrawer, {
-      width: 'min(820px, 100vw)',
-      maxWidth: '100vw',
-      height: '100vh',
-      position: { right: '0' },
-      autoFocus: 'dialog',
-      restoreFocus: true,
-      panelClass: 'task-detail-drawer-panel',
-      data: { task },
-    });
+    const ref = this.dialog.open<TaskManagementDetailDrawer, unknown, TaskManagementDetailResult>(
+      TaskManagementDetailDrawer,
+      {
+        width: 'min(820px, 96vw)',
+        maxWidth: '100vw',
+        maxHeight: '90vh',
+        autoFocus: 'dialog',
+        restoreFocus: true,
+        data: { task },
+      },
+    );
     ref.afterClosed().subscribe((result) => {
       if (!result) return;
       if (result.action === 'edit') this.openEditDialog(result.task);
-      if (result.action === 'status' && result.status) this.updateStatus(result.task, result.status);
+      if (result.action === 'status' && result.status)
+        this.updateStatus(result.task, result.status);
     });
   }
 
@@ -161,7 +182,8 @@ export class TaskManagement implements OnInit {
     if (!result) return;
     const payload: CreateTaskRequest | UpdateTaskRequest = { ...result.value };
     if (result.mode === 'create') this.taskService.createTask(payload).subscribe();
-    if (result.mode === 'edit' && result.taskId) this.taskService.updateTask(result.taskId, payload).subscribe();
+    if (result.mode === 'edit' && result.taskId)
+      this.taskService.updateTask(result.taskId, payload).subscribe();
   }
 
   private toServiceFilters(filters: TaskManagementFilters): TaskFilters {

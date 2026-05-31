@@ -8,6 +8,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,7 +18,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { TaskPriority } from '../../../../core/models/task.model';
 import { TaskFormDialogData, TaskFormDialogResult } from '../../models/task-management.model';
-import { MatNativeDateModule } from '@angular/material/core';
 
 function assigneeNotReviewerValidator(control: AbstractControl): ValidationErrors | null {
   const assigneeId = control.get('assigneeId')?.value;
@@ -61,12 +61,27 @@ export class TaskFormDialog implements OnInit {
 
   protected readonly form = new FormGroup(
     {
-      title: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
-      description: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
-      assigneeId: new FormControl<number | ''>('', { nonNullable: true, validators: [Validators.required] }),
-      reviewerId: new FormControl<number | ''>('', { nonNullable: true, validators: [Validators.required] }),
+      title: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required, Validators.maxLength(200)],
+      }),
+      description: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.maxLength(1000)],
+      }),
+      assigneeId: new FormControl<number | ''>('', {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
+      reviewerId: new FormControl<number | ''>('', {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
       deadline: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      priority: new FormControl<TaskPriority>('MEDIUM', { nonNullable: true, validators: [Validators.required] }),
+      priority: new FormControl<TaskPriority>('MEDIUM', {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
       comment: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
       document: new FormControl('', { nonNullable: true }),
     },
@@ -115,9 +130,8 @@ export class TaskFormDialog implements OnInit {
         description: raw.description,
         assigneeId: raw.assigneeId as number,
         reviewerId: raw.reviewerId as number,
-        deadline: deadline instanceof Date
-          ? deadline.toISOString().split('T')[0]
-          : String(deadline),
+        deadline:
+          deadline instanceof Date ? deadline.toISOString().split('T')[0] : String(deadline),
         priority: raw.priority,
         comment: raw.comment,
         document: raw.document,

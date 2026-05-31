@@ -124,9 +124,13 @@ export class TaskService {
           title: request.title,
           description: request.description,
           assigneeId: request.assigneeId,
-          assigneeName: this.getMockUsers().find(u => u.id === request.assigneeId)?.name || `User ${request.assigneeId}`,
+          assigneeName:
+            this.getMockUsers().find((u) => u.id === request.assigneeId)?.name ||
+            `User ${request.assigneeId}`,
           reviewerId: request.reviewerId,
-          reviewerName: this.getMockUsers().find(u => u.id === request.reviewerId)?.name || `User ${request.reviewerId}`,
+          reviewerName:
+            this.getMockUsers().find((u) => u.id === request.reviewerId)?.name ||
+            `User ${request.reviewerId}`,
           deadline: request.deadline,
           priority: request.priority,
           document: request.document,
@@ -139,11 +143,13 @@ export class TaskService {
               type: 'STATUS_CHANGE',
               message: 'Task created and assigned.',
               authorName: 'Admin User',
-              createdAt: new Date().toISOString()
-            }
-          ]
+              createdAt: new Date().toISOString(),
+            },
+          ],
         };
-        return of({ succeeded: true, message: 'Mock task created', data: mockTask }).pipe(delay(350));
+        return of({ succeeded: true, message: 'Mock task created', data: mockTask }).pipe(
+          delay(350),
+        );
       }),
       tap((response) => {
         if (!response.succeeded) {
@@ -156,7 +162,7 @@ export class TaskService {
         this.errorSignal.set(this.getErrorMessage(error));
         return throwError(() => error);
       }),
-      finalize(() => this.savingSignal.set(false))
+      finalize(() => this.savingSignal.set(false)),
     );
   }
 
@@ -165,16 +171,20 @@ export class TaskService {
     this.errorSignal.set(null);
     return this.http.put<ApiResponse<Task>>(`${this.apiUrl}/${taskId}`, request).pipe(
       catchError(() => {
-        const existingTask = this.tasksSignal().find(t => t.id === taskId);
+        const existingTask = this.tasksSignal().find((t) => t.id === taskId);
         const updatedTask: Task = {
           ...existingTask,
           id: taskId,
           title: request.title,
           description: request.description,
           assigneeId: request.assigneeId,
-          assigneeName: this.getMockUsers().find(u => u.id === request.assigneeId)?.name || `User ${request.assigneeId}`,
+          assigneeName:
+            this.getMockUsers().find((u) => u.id === request.assigneeId)?.name ||
+            `User ${request.assigneeId}`,
           reviewerId: request.reviewerId,
-          reviewerName: this.getMockUsers().find(u => u.id === request.reviewerId)?.name || `User ${request.reviewerId}`,
+          reviewerName:
+            this.getMockUsers().find((u) => u.id === request.reviewerId)?.name ||
+            `User ${request.reviewerId}`,
           deadline: request.deadline,
           priority: request.priority,
           document: request.document,
@@ -187,18 +197,20 @@ export class TaskService {
               type: 'COMMENT',
               message: 'Task metadata updated by Administrator.',
               authorName: 'Admin User',
-              createdAt: new Date().toISOString()
-            }
-          ]
+              createdAt: new Date().toISOString(),
+            },
+          ],
         };
-        return of({ succeeded: true, message: 'Mock task updated', data: updatedTask }).pipe(delay(350));
+        return of({ succeeded: true, message: 'Mock task updated', data: updatedTask }).pipe(
+          delay(350),
+        );
       }),
       tap((response) => {
         if (!response.succeeded) {
           throw new Error(response.message || 'Failed to update task.');
         }
         this.tasksSignal.update((tasks) =>
-          tasks.map((task) => (task.id === taskId ? response.data : task))
+          tasks.map((task) => (task.id === taskId ? response.data : task)),
         );
       }),
       map((response) => response.data),
@@ -206,7 +218,7 @@ export class TaskService {
         this.errorSignal.set(this.getErrorMessage(error));
         return throwError(() => error);
       }),
-      finalize(() => this.savingSignal.set(false))
+      finalize(() => this.savingSignal.set(false)),
     );
   }
 

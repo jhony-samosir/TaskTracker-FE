@@ -96,13 +96,11 @@ export class MyTasks implements OnInit {
     const dialogRef = this.dialog.open<TaskDetailDrawerComponent, TaskDetailDialogData, TaskStatus>(
       TaskDetailDrawerComponent,
       {
-        width: 'min(720px, 100vw)',
+        width: 'min(720px, 96vw)',
         maxWidth: '100vw',
-        height: '100vh',
-        position: { right: '0' },
+        maxHeight: '90vh',
         autoFocus: 'dialog',
         restoreFocus: true,
-        panelClass: 'task-detail-drawer-panel',
         data: { task },
       },
     );
