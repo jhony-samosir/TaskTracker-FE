@@ -44,6 +44,13 @@ export interface UserProfileResponse {
   role: string;
 }
 
+export interface UserDropdownResponse {
+  userId: number;
+  fullName: string;
+  email: string;
+  role: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -76,6 +83,10 @@ export class AuthService {
     return this.http
       .post<ApiResponse<AuthResponse>>(`${this.apiUrl}/register`, request)
       .pipe(tap((response) => this.persistAuth(response.data)));
+  }
+
+  listUsers(): Observable<ApiResponse<UserDropdownResponse[]>> {
+    return this.http.get<ApiResponse<UserDropdownResponse[]>>(`${this.apiUrl}/listuser`);
   }
 
   login(request: LoginRequest): Observable<ApiResponse<AuthResponse>> {

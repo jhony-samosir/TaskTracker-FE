@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Task, TaskPriority, TaskStatus } from '../../../../core/models/task.model';
-import { AuthService } from '../../../../core/services/auth.service';
+import { AuthService, UserDropdownResponse } from '../../../../core/services/auth.service';
 import {
   CreateTaskRequest,
   TaskFilters,
@@ -56,37 +56,7 @@ export class TaskManagement implements OnInit {
   protected readonly loading = this.taskService.loading;
   protected readonly saving = this.taskService.saving;
   protected readonly error = this.taskService.error;
-  protected readonly users = computed<TaskManagementUserOption[]>(() => {
-    const users = new Map<number, TaskManagementUserOption>();
-    const currentUser = this.authService.currentUser();
-
-    if (currentUser) {
-      users.set(currentUser.id, {
-        id: currentUser.id,
-        name: currentUser.name,
-        role: currentUser.role,
-      });
-    }
-
-    for (const task of this.tasks()) {
-      if (task.assigneeName) {
-        users.set(task.assigneeId, {
-          id: task.assigneeId,
-          name: task.assigneeName,
-          role: 'EMPLOYEE',
-        });
-      }
-      if (task.reviewerName) {
-        users.set(task.reviewerId, {
-          id: task.reviewerId,
-          name: task.reviewerName,
-          role: 'ADMIN',
-        });
-      }
-    }
-
-    return Array.from(users.values()).sort((a, b) => a.name.localeCompare(b.name));
-  });
+  protected readonly users = signal<TaskManagementUserOption[]>([]);
 
   protected readonly filters = signal<TaskManagementFilters>({
     search: '',
@@ -120,6 +90,8 @@ export class TaskManagement implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadUsers();
+
     this.route.queryParamMap.subscribe((params) => {
       const nextFilters: TaskManagementFilters = {
         search: params.get('search') ?? '',
@@ -220,6 +192,36 @@ export class TaskManagement implements OnInit {
     if (result.mode === 'create') this.taskService.createTask(payload).subscribe();
     if (result.mode === 'edit' && result.taskId)
       this.taskService.updateTask(result.taskId, payload).subscribe();
+  }
+
+  private loadUsers(): void {
+    this.authService.listUsers().subscribe({
+      next: (response) => {
+        this.users.set(response.data.map((user) => this.toUserOption(user)));
+      },
+      error: () => {
+        const currentUser = this.authService.currentUser();
+        this.users.set(
+          currentUser
+            ? [
+                {
+                  id: currentUser.id,
+                  name: currentUser.name,
+                  role: currentUser.role,
+                },
+              ]
+            : [],
+        );
+      },
+    });
+  }
+
+  private toUserOption(user: UserDropdownResponse): TaskManagementUserOption {
+    return {
+      id: user.userId,
+      name: user.fullName,
+      role: user.role.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'EMPLOYEE',
+    };
   }
 
   private toServiceFilters(filters: TaskManagementFilters): TaskFilters {
